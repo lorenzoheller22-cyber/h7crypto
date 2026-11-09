@@ -1,5 +1,4 @@
-import { Buffer } from "buffer";
-if (typeof globalThis.Buffer === "undefined") (globalThis as any).Buffer = Buffer;
+import "@/lib/polyfills";
 import { useMemo, type ReactNode } from "react";
 import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
