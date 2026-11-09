@@ -137,7 +137,7 @@ function LaunchModal({ token, onClose }: { token: TrendingToken; onClose: () => 
   const [result, setResult] = useState<{ mint: string; sig: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => { if (file) { const u = URL.createObjectURL(file); setPreview(u); return () => URL.revokeObjectURL(u); } }, [file]);
+  useEffect(() => { if (!file) return undefined; const u = URL.createObjectURL(file); setPreview(u); return () => URL.revokeObjectURL(u); }, [file]);
 
   const fee = cfg.data?.feeWallet ? cfg.data.feeSol : 0;
   const total = fee + f.devBuy + f.priority + 0.02;
@@ -163,7 +163,7 @@ function LaunchModal({ token, onClose }: { token: TrendingToken; onClose: () => 
       if (file) {
         const b = new Uint8Array(await file.arrayBuffer()); let s = ""; for (const x of b) s += String.fromCharCode(x); imageBase64 = btoa(s);
       }
-      const meta = await uploadMetadata({ data: { name: f.name, symbol: f.symbol, description: f.description, imageUrl: token.image ?? undefined, imageBase64, imageType: file?.type, twitter: f.twitter, telegram: f.telegram, website: f.website } });
+      const meta = await uploadMetadata({ data: { name: f.name, symbol: f.symbol, description: f.description, ...(token.image ? { imageUrl: token.image } : {}), ...(imageBase64 ? { imageBase64, imageType: file?.type ?? "image/png" } : {}), twitter: f.twitter, telegram: f.telegram, website: f.website } });
       mark(i++, "ok"); mark(i, "run");
       const mint = Keypair.generate();
       const { tx } = await buildCreateTx({ data: { publicKey: publicKey.toBase58(), mint: mint.publicKey.toBase58(), name: meta.name, symbol: meta.symbol, uri: meta.uri, devBuySol: f.devBuy, priorityFee: f.priority, slippage: f.slippage } });
