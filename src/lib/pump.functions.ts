@@ -163,3 +163,49 @@ export const buildCreateTx = createServerFn({ method: "POST" })
     for (const b of buf) s += String.fromCharCode(b);
     return { tx: btoa(s) };
   });
+
+export const getCoinsInfo = createServerFn({ method: "POST" })
+  .inputValidator((d: { mints: string[] }) => ({ mints: d.mints.slice(0, 50) }))
+  .handler(async ({ data }) => {
+    const out: Record<string, { name: string; symbol: string; image: string | null; priceSol: number; marketCap: number; progress: number; complete: boolean }> = {};
+    await Promise.all(
+      data.mints.map(async (m) => {
+        try {
+          const r = await fetch(`https://frontend-api-v3.pump.fun/coins/${m}`, { headers: UA });
+          if (!r.ok) return;
+          const c = (await r.json()) as any;
+          const vs = Number(c.virtual_sol_reserves ?? 0), vt = Number(c.virtual_token_reserves ?? 0);
+          const real = Number(c.real_token_reserves ?? 0);
+          out[m] = {
+            name: c.name, symbol: c.symbol, image: c.image_uri ?? null,
+            // reserves: SOL in lamports (9 dec), tokens with 6 dec
+            priceSol: vt ? (vs / 1e9) / (vt / 1e6) : 0,
+            marketCap: Number(c.usd_market_cap ?? 0),
+            progress: c.complete ? 100 : Math.max(0, Math.min(100, 100 - (real / 793100000e6) * 100)),
+            complete: !!c.complete,
+          };
+        } catch { /* ignore */ }
+      }),
+    );
+    return out;
+  });
+
+export const buildSellTx = createServerFn({ method: "POST" })
+  .inputValidator((d: { publicKey: string; mint: string; percent: number; priorityFee: number; slippage: number }) => d)
+  .handler(async ({ data }) => {
+    const pct = Math.max(1, Math.min(100, Math.round(data.percent)));
+    const r = await fetch("https://pumpportal.fun/api/trade-local", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        publicKey: data.publicKey, action: "sell", mint: data.mint,
+        denominatedInSol: "false", amount: `${pct}%`,
+        slippage: data.slippage, priorityFee: data.priorityFee, pool: "auto",
+      }),
+    });
+    if (!r.ok) throw new Error(`PumpPortal: ${r.status} ${await r.text()}`);
+    const buf = new Uint8Array(await r.arrayBuffer());
+    let s = "";
+    for (const b of buf) s += String.fromCharCode(b);
+    return { tx: btoa(s) };
+  });
