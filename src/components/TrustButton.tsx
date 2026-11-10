@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 
-/** Connects Trust Wallet: extension directly, or on mobile opens this site inside Trust's browser. */
+/** Phantom-only connect: in Phantom's browser/extension connects directly; on mobile browsers opens the Phantom app with this site. */
 export function TrustButton() {
-  const { wallets, select, connect, connected, wallet } = useWallet();
+  const { wallets, select, connect, connected, connecting, wallet } = useWallet();
   const [pending, setPending] = useState(false);
-  const trust = wallets.find((w) => /trust/i.test(w.adapter.name));
+  const phantom = wallets.find((w) => /phantom/i.test(w.adapter.name));
 
   useEffect(() => {
-    if (pending && wallet && /trust/i.test(wallet.adapter.name)) {
+    if (pending && wallet && /phantom/i.test(wallet.adapter.name)) {
       setPending(false);
       connect().catch(() => {});
     }
@@ -16,20 +16,24 @@ export function TrustButton() {
 
   if (connected) return null;
   const onClick = () => {
-    const mobile = /android|iphone|ipad/i.test(navigator.userAgent);
-    const installed = trust && (trust.readyState === "Installed" || trust.readyState === "Loadable");
-    if (trust && (installed || !mobile)) {
-      if (installed) { select(trust.adapter.name); setPending(true); return; }
+    const injected = phantom && phantom.readyState === "Installed";
+    if (injected) {
+      select(phantom.adapter.name);
+      setPending(true);
+      return;
     }
+    const mobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
     if (mobile) {
-      window.location.href = `https://link.trustwallet.com/open_url?coin_id=501&url=${encodeURIComponent(window.location.href)}`;
+      const url = encodeURIComponent(window.location.href);
+      const ref = encodeURIComponent(window.location.origin);
+      window.location.href = `https://phantom.app/ul/browse/${url}?ref=${ref}`;
     } else {
-      window.open("https://trustwallet.com/browser-extension", "_blank");
+      window.open("https://phantom.app/download", "_blank");
     }
   };
   return (
-    <button onClick={onClick} className="border border-primary px-3 py-2 text-xs font-bold text-primary hover:bg-primary/10">
-      🛡 Trust Wallet
+    <button onClick={onClick} disabled={connecting} className="border border-primary bg-primary/10 px-3 py-2 text-xs font-bold text-primary hover:bg-primary/20 disabled:opacity-50">
+      {connecting ? "Conectando..." : "👻 Conectar Phantom"}
     </button>
   );
 }

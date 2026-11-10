@@ -1,7 +1,8 @@
 import { createFileRoute, ClientOnly } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 
-const WalletShell = lazy(() => import("@/components/WalletShell"));
+// Polyfills must finish before any Solana module evaluates (bundlers may hoist imports).
+const WalletShell = lazy(() => import("@/lib/polyfills").then(() => import("@/components/WalletShell")));
 
 export const Route = createFileRoute("/")({
   head: () => ({
