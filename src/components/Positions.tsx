@@ -93,16 +93,18 @@ function Row({ p, c, tokens, value, diff, pct }: { p: Position; c: any; tokens: 
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; t: string; sig?: string } | null>(null);
 
-  async function sell() {
+  async function sell(force?: number) {
     if (!publicKey || !signTransaction || tokens <= 0) return;
+    const pctToSell = force ?? percent;
+    const dump = pctToSell === 100 && force === 100;
     setBusy(true); setMsg(null);
     try {
-      const { tx } = await buildSellTx({ data: { publicKey: publicKey.toBase58(), mint: p.mint, percent, priorityFee: 0.0005, slippage: 15 } });
+      const { tx } = await buildSellTx({ data: { publicKey: publicKey.toBase58(), mint: p.mint, percent: pctToSell, priorityFee: dump ? 0.005 : 0.0005, slippage: dump ? 25 : 15 } });
       const vtx = VersionedTransaction.deserialize(Uint8Array.from(atob(tx), (ch) => ch.charCodeAt(0)));
       const signed = await signTransaction(vtx);
       const sig = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: true, maxRetries: 3 });
       await connection.confirmTransaction(sig, "confirmed");
-      setMsg({ ok: true, t: `Vendido ${percent}% — SOL enviado para sua carteira`, sig });
+      setMsg({ ok: true, t: `Vendido ${pctToSell}% — SOL enviado para sua carteira`, sig });
     } catch (e: any) { setMsg({ ok: false, t: e?.message ?? String(e) }); } finally { setBusy(false); }
   }
 
@@ -129,7 +131,8 @@ function Row({ p, c, tokens, value, diff, pct }: { p: Position; c: any; tokens: 
         <input type="range" min={1} max={100} value={percent} onChange={(e) => setPercent(Number(e.target.value))} className="w-28 accent-[var(--primary)]" />
         <b className="w-10 text-primary">{percent}%</b>
         <span className="text-muted-foreground">≈ {(value * percent / 100).toFixed(3)} SOL</span>
-        <button disabled={busy || tokens <= 0} onClick={sell} className="ml-auto bg-primary px-3 py-1.5 font-bold text-primary-foreground disabled:opacity-50">
+        <button disabled={busy || tokens <= 0} onClick={() => sell(100)} className="ml-auto bg-destructive px-3 py-1.5 font-bold text-destructive-foreground disabled:opacity-50">🚨 DUMP ALL</button>
+        <button disabled={busy || tokens <= 0} onClick={() => sell()} className=" bg-primary px-3 py-1.5 font-bold text-primary-foreground disabled:opacity-50">
           {busy ? "VENDENDO..." : tokens <= 0 ? "SEM SALDO" : `RESGATAR ${percent}%`}
         </button>
         <a href={`https://pump.fun/coin/${p.mint}`} target="_blank" rel="noreferrer" className="border border-border px-2 py-1.5 hover:border-primary">pump</a>
