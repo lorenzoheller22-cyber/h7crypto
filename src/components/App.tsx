@@ -3,6 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction, VersionedTransaction } from "@solana/web3.js";
+import { Positions } from "./Positions";
+import { TrustButton } from "./TrustButton";
+import { savePosition } from "@/lib/positions";
 import { buildCreateTx, getPlatformConfig, getTrending, uploadMetadata, type TrendingToken } from "@/lib/pump.functions";
 
 const fmtUsd = (n: number) =>
@@ -14,11 +17,23 @@ const ago = (ts: number | null) => {
 };
 
 type Filter = "all" | "pump.fun" | "dexscreener";
+type Tab = "trending" | "coins";
 
 export function App() {
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
   const [copying, setCopying] = useState<TrendingToken | null>(null);
+  const [tab, setTab] = useState<Tab>("trending");
+  const { connection } = useConnection();
+  const { publicKey } = useWallet();
+  const [balance, setBalance] = useState<number | null>(null);
+  useEffect(() => {
+    if (!publicKey) { setBalance(null); return undefined; }
+    let on = true;
+    const load = () => connection.getBalance(publicKey).then((b) => on && setBalance(b / LAMPORTS_PER_SOL)).catch(() => {});
+    load(); const id = setInterval(load, 15000);
+    return () => { on = false; clearInterval(id); };
+  }, [publicKey, connection]);
   const { data, isFetching, dataUpdatedAt } = useQuery({
     queryKey: ["trending"],
     queryFn: () => getTrending(),
@@ -34,20 +49,47 @@ export function App() {
     [data, filter, q],
   );
 
+  const nav: [Tab, string][] = [["trending", "🔥 Copy Trending"], ["coins", "💧 Minhas Moedas"]];
   return (
-    <div className="min-h-screen font-mono">
+    <div className="flex min-h-screen font-mono">
+      <aside className="sticky top-0 hidden h-screen w-56 shrink-0 flex-col border-r border-border bg-card/60 p-4 md:flex">
+        <div className="mb-8 flex items-center gap-2">
+          <span className="flex h-8 w-8 items-center justify-center bg-primary font-bold text-primary-foreground">H</span>
+          <span className="font-bold tracking-widest">HELLER</span>
+        </div>
+        <nav className="space-y-1 text-sm">
+          {nav.map(([k, l]) => (
+            <button key={k} onClick={() => setTab(k)} className={`w-full px-3 py-2 text-left ${tab === k ? "border-l-2 border-primary bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}>{l}</button>
+          ))}
+        </nav>
+        <div className="mt-auto border-t border-border pt-3 text-xs">
+          <div className="font-bold">Lorenzo Heller</div>
+          <div className={publicKey ? "text-primary" : "text-muted-foreground"}>● {publicKey ? "Online" : "Desconectado"}</div>
+        </div>
+      </aside>
+      <div className="min-w-0 flex-1">
       <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="text-primary text-xl">▲</span>
-            <span className="font-bold tracking-tight">copytrend<span className="text-primary">.fun</span></span>
-            <span className="hidden sm:inline text-xs text-muted-foreground">// copy trending coins → pump.fun</span>
+        <div className="flex items-center justify-between gap-2 px-4 py-3">
+          <div className="flex items-center gap-2 md:hidden">
+            <span className="flex h-7 w-7 items-center justify-center bg-primary font-bold text-primary-foreground">H</span>
+            <span className="font-bold">HELLER</span>
           </div>
-          <WalletMultiButton />
+          <span className="hidden text-xs text-muted-foreground md:inline">// terminal de lançamento · pump.fun</span>
+          <div className="flex items-center gap-2">
+            {balance !== null && <span className="border border-primary/50 px-2 py-1.5 text-xs text-primary">{balance.toFixed(3)} SOL</span>}
+            <TrustButton />
+            <WalletMultiButton />
+          </div>
+        </div>
+        <div className="flex border-t border-border md:hidden">
+          {nav.map(([k, l]) => (
+            <button key={k} onClick={() => setTab(k)} className={`flex-1 py-2 text-xs ${tab === k ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}>{l}</button>
+          ))}
         </div>
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6">
+        {tab === "coins" ? <Positions /> : <>
         <section className="mb-6">
           <h1 className="text-3xl md:text-5xl font-bold leading-tight">
             Copie o que está <span className="text-primary glow">pumpando</span>.<br />Lance em 1 clique.
@@ -83,8 +125,10 @@ export function App() {
             {list.map((t) => <TokenCard key={t.mint} t={t} onCopy={() => setCopying(t)} />)}
           </div>
         )}
+        </>}
       </main>
-      {copying && <LaunchModal token={copying} onClose={() => setCopying(null)} />}
+      </div>
+      {copying && <LaunchModal token={copying} onClose={() => setCopying(null)} onDone={() => { setCopying(null); setTab("coins"); }} />}
     </div>
   );
 }
@@ -120,7 +164,7 @@ function TokenCard({ t, onCopy }: { t: TrendingToken; onCopy: () => void }) {
 
 type Step = { label: string; state: "idle" | "run" | "ok" | "err" };
 
-function LaunchModal({ token, onClose }: { token: TrendingToken; onClose: () => void }) {
+function LaunchModal({ token, onClose, onDone }: { token: TrendingToken; onClose: () => void; onDone: () => void }) {
   const { connection } = useConnection();
   const { publicKey, signTransaction, sendTransaction } = useWallet();
   const cfg = useQuery({ queryKey: ["cfg"], queryFn: () => getPlatformConfig() });
@@ -128,7 +172,7 @@ function LaunchModal({ token, onClose }: { token: TrendingToken; onClose: () => 
     name: token.name, symbol: token.symbol.toUpperCase().slice(0, 10),
     description: token.description || `${token.name} — the next ${token.symbol}. Community driven.`,
     twitter: token.twitter ?? "", telegram: token.telegram ?? "", website: token.website ?? "",
-    devBuy: 0.5, priority: 0.0005, slippage: 10,
+    devBuy: 0.2, priority: 0.002, slippage: 10,
   });
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(token.image);
@@ -176,6 +220,7 @@ function LaunchModal({ token, onClose }: { token: TrendingToken; onClose: () => 
       await connection.confirmTransaction(sig, "confirmed");
       mark(i, "ok");
       setResult({ mint: mint.publicKey.toBase58(), sig });
+      savePosition({ mint: mint.publicKey.toBase58(), name: meta.name, symbol: meta.symbol, image: token.image, investedSol: f.devBuy, createdAt: Date.now(), owner: publicKey.toBase58(), sig });
     } catch (e: any) {
       mark(i, "err"); setError(e?.message ?? String(e));
     } finally { setBusy(false); }
@@ -198,6 +243,7 @@ function LaunchModal({ token, onClose }: { token: TrendingToken; onClose: () => 
               <a className="bg-primary px-3 py-2 font-bold text-primary-foreground" href={`https://pump.fun/coin/${result.mint}`} target="_blank" rel="noreferrer">Ver no Pump.fun ↗</a>
               <a className="border border-border px-3 py-2 hover:border-primary" href={`https://dexscreener.com/solana/${result.mint}`} target="_blank" rel="noreferrer">DexScreener ↗</a>
               <a className="border border-border px-3 py-2 hover:border-primary" href={`https://solscan.io/tx/${result.sig}`} target="_blank" rel="noreferrer">Solscan ↗</a>
+              <button onClick={onDone} className="w-full bg-primary px-3 py-2 font-bold text-primary-foreground">💧 Ir para Minhas Moedas (vender / DUMP ALL)</button>
             </div>
           </div>
         ) : (
@@ -221,7 +267,7 @@ function LaunchModal({ token, onClose }: { token: TrendingToken; onClose: () => 
             <div className="mt-4 border border-border p-3 text-xs">
               <div className="mb-2 flex justify-between"><span>DEV BUY (SOL)</span><b className="text-primary">{f.devBuy} SOL</b></div>
               <input type="range" min={0} max={5} step={0.05} value={f.devBuy} onChange={set("devBuy")} className="w-full accent-[var(--primary)]" />
-              <div className="mt-1 flex gap-1">{[0, 0.25, 0.5, 1, 2].map((v) => (
+              <div className="mt-1 flex gap-1">{[0.2, 0.5, 1, 2].map((v) => (
                 <button key={v} onClick={() => setF({ ...f, devBuy: v })} className={`border px-2 py-0.5 ${f.devBuy === v ? "border-primary text-primary" : "border-border"}`}>{v}</button>))}
               </div>
               <div className="mt-3 mb-1">PRIORIDADE</div>

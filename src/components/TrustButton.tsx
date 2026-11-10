@@ -16,8 +16,11 @@ export function TrustButton() {
 
   if (connected) return null;
   const onClick = () => {
-    if (trust) { select(trust.adapter.name); setPending(true); return; }
     const mobile = /android|iphone|ipad/i.test(navigator.userAgent);
+    const installed = trust && (trust.readyState === "Installed" || trust.readyState === "Loadable");
+    if (trust && (installed || !mobile)) {
+      if (installed) { select(trust.adapter.name); setPending(true); return; }
+    }
     if (mobile) {
       window.location.href = `https://link.trustwallet.com/open_url?coin_id=501&url=${encodeURIComponent(window.location.href)}`;
     } else {
