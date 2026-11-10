@@ -300,7 +300,7 @@ function LaunchModal({ token, onClose, onDone }: { token: TrendingToken; onClose
                   {busy ? "LANÇANDO..." : `🚀 DEPLOY NA PUMP.FUN (${total.toFixed(3)} SOL)`}
                 </button>
               ) : (
-                <div className="flex flex-col items-center gap-2"><span className="text-xs text-muted-foreground">Conecte sua carteira para lançar</span><WalletMultiButton /></div>
+                <div className="flex flex-col items-center gap-2"><span className="text-xs text-muted-foreground">Conecte sua Phantom para lançar</span><TrustButton /></div>
               )}
             </div>
           </>
