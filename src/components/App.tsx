@@ -207,7 +207,13 @@ function LaunchModal({ token, onClose, onDone }: { token: TrendingToken; onClose
       if (file) {
         const b = new Uint8Array(await file.arrayBuffer()); let s = ""; for (const x of b) s += String.fromCharCode(x); imageBase64 = btoa(s);
       }
-      const meta = await uploadMetadata({ data: { name: f.name, symbol: f.symbol, description: f.description, ...(token.image ? { imageUrl: token.image } : {}), ...(imageBase64 ? { imageBase64, imageType: file?.type ?? "image/png" } : {}), twitter: f.twitter, telegram: f.telegram, website: f.website } });
+      let meta: { uri: string; name: string; symbol: string };
+      try {
+        meta = await uploadMetadata({ data: { name: f.name, symbol: f.symbol, description: f.description, ...(token.image ? { imageUrl: token.image } : {}), ...(imageBase64 ? { imageBase64, imageType: file?.type ?? "image/png" } : {}), twitter: f.twitter, telegram: f.telegram, website: f.website } });
+      } catch {
+        const uri = `${window.location.origin}/api/public/m/${token.mint}?n=${encodeURIComponent(f.name.slice(0, 32))}&s=${encodeURIComponent(f.symbol.slice(0, 10))}`;
+        meta = { uri, name: f.name, symbol: f.symbol };
+      }
       mark(i++, "ok"); mark(i, "run");
       const mint = Keypair.generate();
       const { tx } = await buildCreateTx({ data: { publicKey: publicKey.toBase58(), mint: mint.publicKey.toBase58(), name: meta.name, symbol: meta.symbol, uri: meta.uri, devBuySol: f.devBuy, priorityFee: f.priority, slippage: f.slippage } });
