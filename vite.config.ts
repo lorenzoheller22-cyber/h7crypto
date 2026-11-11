@@ -30,6 +30,7 @@ export default defineConfig({
         applyToEnvironment: (env) => env.name === "client",
         resolveId(id) {
           if (id === "buffer" || id === "buffer/" || id === "node:buffer") return bufferPath;
+          return null;
         },
       },
     ],
