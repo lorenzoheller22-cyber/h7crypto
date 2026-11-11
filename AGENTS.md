@@ -28,3 +28,6 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Project rules
+- Client builds resolve `buffer`/`node:buffer` to the npm `buffer` package via a plugin in vite.config.ts — production otherwise stubs it empty and Solana libs crash on load.
