@@ -220,8 +220,7 @@ function LaunchModal({ token, onClose, onDone }: { token: TrendingToken; onClose
       const vtx = VersionedTransaction.deserialize(Uint8Array.from(atob(tx), (c) => c.charCodeAt(0)));
       vtx.sign([mint]);
       mark(i++, "ok"); mark(i, "run");
-      const signed = await signTransaction(vtx);
-      const sig = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: true, maxRetries: 3 });
+      const sig = await sendTransaction(vtx, connection, { skipPreflight: true, maxRetries: 3 });
       mark(i++, "ok"); mark(i, "run");
       await connection.confirmTransaction(sig, "confirmed");
       mark(i, "ok");

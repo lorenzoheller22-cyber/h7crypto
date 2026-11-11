@@ -6,7 +6,7 @@ import "@solana/wallet-adapter-react-ui/styles.css";
 import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
 import { App } from "./App";
 
-export const RPC = import.meta.env['VITE_SOLANA_RPC'] || "https://api.mainnet-beta.solana.com";
+export const RPC = import.meta.env['VITE_SOLANA_RPC'] || "https://solana-rpc.publicnode.com";
 
 export default function WalletShell(_: { children?: ReactNode }) {
   const wallets = useMemo(() => [new PhantomWalletAdapter()], []);
