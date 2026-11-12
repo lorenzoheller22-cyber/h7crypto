@@ -27,6 +27,7 @@ export default defineConfig({
         // Force the browser bundle to use the real npm `buffer` package.
         name: "browser-buffer-polyfill",
         enforce: "pre",
+        apply: "build",
         applyToEnvironment: (env) => env.name === "client",
         resolveId(id) {
           if (id === "buffer" || id === "buffer/" || id === "node:buffer") return bufferPath;
