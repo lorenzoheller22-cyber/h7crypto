@@ -73,14 +73,14 @@
 }
 
 :root {
-  --radius: 0rem;
-  --background: oklch(0.13 0.01 160);
+  --radius: 1.25rem;
+  --background: oklch(0.15 0.012 125);
   --foreground: oklch(0.94 0.02 150);
-  --card: oklch(0.17 0.012 160);
+  --card: oklch(0.2 0.008 125);
   --card-foreground: oklch(0.94 0.02 150);
-  --popover: oklch(0.17 0.012 160);
+  --popover: oklch(0.2 0.008 125);
   --popover-foreground: oklch(0.94 0.02 150);
-  --primary: oklch(0.86 0.24 145);
+  --primary: oklch(0.9 0.2 125);
   --primary-foreground: oklch(0.15 0.02 160);
   --secondary: oklch(0.22 0.015 160);
   --secondary-foreground: oklch(0.94 0.02 150);
@@ -90,9 +90,9 @@
   --accent-foreground: oklch(0.94 0.02 150);
   --destructive: oklch(0.65 0.23 25);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.28 0.02 160);
+  --border: oklch(0.27 0.012 125);
   --input: oklch(0.28 0.02 160);
-  --ring: oklch(0.86 0.24 145);
+  --ring: oklch(0.9 0.2 125);
   --shadow-glow: 0 0 40px -10px color-mix(in oklab, var(--primary) 50%, transparent);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -150,13 +150,20 @@
   }
 
   body {
-    font-family: "JetBrains Mono", ui-monospace, monospace;
-    background-image: radial-gradient(color-mix(in oklab, var(--primary) 8%, transparent) 1px, transparent 1px);
-    background-size: 22px 22px;
+    font-family: "Urbanist", ui-sans-serif, system-ui, sans-serif;
+    background-image: radial-gradient(120% 60% at 0% 0%, color-mix(in oklab, var(--primary) 16%, transparent), transparent 60%);
+    background-attachment: fixed;
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
 }
 
 .glow { text-shadow: 0 0 24px color-mix(in oklab, var(--primary) 60%, transparent); }
-.wallet-adapter-button-trigger { background: var(--primary) !important; color: var(--primary-foreground) !important; border-radius: 0 !important; font-family: inherit !important; height: 40px !important; font-size: 13px !important; }
+.wallet-adapter-button-trigger { background: var(--primary) !important; color: var(--primary-foreground) !important; border-radius: 9999px !important; font-weight: 700 !important; font-family: inherit !important; height: 40px !important; font-size: 13px !important; }
+
+/* Pill/rounded look inspired by modern wallet apps */
+button, input, textarea, select, a.border, a.bg-primary { border-radius: 9999px; }
+textarea { border-radius: 1rem; }
+.bg-card, .bg-card\/60 { border-radius: 1.5rem; }
+img.border, .bg-muted { border-radius: 1rem; }
+aside.bg-card\/60 { border-radius: 0; }

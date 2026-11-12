@@ -19,7 +19,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Loading() {
-  return <div className="flex min-h-screen items-center justify-center font-mono text-primary animate-pulse">&gt; booting terminal...</div>;
+  return <div className="flex min-h-screen items-center justify-center text-primary animate-pulse">&gt; booting terminal...</div>;
 }
 
 function Index() {

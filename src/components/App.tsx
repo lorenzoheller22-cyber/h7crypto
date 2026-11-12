@@ -52,7 +52,7 @@ export function App() {
 
   const nav: [Tab, string][] = [["trending", "🔥 Copy Trending"], ["coins", "💧 Minhas Moedas"], ["sim", "🧪 Simulação"]];
   return (
-    <div className="flex min-h-screen font-mono">
+    <div className="flex min-h-screen">
       <aside className="sticky top-0 hidden h-screen w-56 shrink-0 flex-col border-r border-border bg-card/60 p-4 md:flex">
         <div className="mb-8 flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center bg-primary font-bold text-primary-foreground">H</span>
@@ -235,7 +235,7 @@ function LaunchModal({ token, onClose, onDone }: { token: TrendingToken; onClose
   const inp = "w-full border border-border bg-background px-2 py-1.5 text-sm outline-none focus:border-primary";
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur" onClick={() => !busy && onClose()}>
-      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto border border-primary/50 bg-card p-5 font-mono shadow-[var(--shadow-glow)]" onClick={(e) => e.stopPropagation()}>
+      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto border border-primary/50 bg-card p-5 shadow-[var(--shadow-glow)]" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-bold"><span className="text-primary">&gt;</span> copy_launch <span className="text-muted-foreground">${token.symbol}</span></h2>
           <button onClick={onClose} disabled={busy} className="text-muted-foreground hover:text-foreground">[x]</button>
