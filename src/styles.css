@@ -167,3 +167,4 @@ textarea { border-radius: 1rem; }
 .bg-card, .bg-card\/60 { border-radius: 1.5rem; }
 img.border, .bg-muted { border-radius: 1rem; }
 aside.bg-card\/60 { border-radius: 0; }
+.wallet-adapter-button-trigger { white-space: nowrap !important; padding: 0 14px !important; }
