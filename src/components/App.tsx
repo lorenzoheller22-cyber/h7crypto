@@ -92,11 +92,12 @@ export function App() {
       <main className="mx-auto max-w-7xl px-4 py-6">
         {tab === "coins" ? <Positions /> : tab === "sim" ? <Simulator tokens={data ?? []} /> : <>
         <section className="mb-6">
-          <h1 className="text-3xl md:text-5xl font-bold leading-tight">
-            Copie o que está <span className="text-primary glow">pumpando</span>.<br />Lance em 1 clique.
+          <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-primary"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />Ao vivo na Solana</span>
+          <h1 className="font-display text-4xl md:text-6xl font-bold leading-[1.05] tracking-tight">
+            Pegue a onda <span className="text-primary glow">antes</span><br />de todo mundo.
           </h1>
-          <p className="mt-2 text-muted-foreground text-sm">
-            Feed ao vivo da Solana &amp; Pump.fun. Clique em COPY, ajuste o dev buy e faça deploy com compradores esperando.
+          <p className="mt-3 max-w-xl text-muted-foreground text-base">
+            Veja as moedas que estão bombando agora, copie em 1 toque e lance na Pump.fun com Dev Buy e prioridade máxima.
           </p>
         </section>
 
