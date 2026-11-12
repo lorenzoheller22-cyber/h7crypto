@@ -13,8 +13,8 @@ describe("simulação", () => {
   });
   it("vender 100% a 3x devolve 0.6 SOL e lucro 0.4", () => {
     const s = launch(base, t, 0.2);
-    s.positions[0].mult = 3;
-    const r = sell(s, s.positions[0].id, 100);
+    s.positions[0]!.mult = 3;
+    const r = sell(s, s.positions[0]!.id, 100);
     expect(r.bank).toBeCloseTo(5.4);
     expect(r.realized).toBeCloseTo(0.4);
     expect(r.positions.length).toBe(0);
