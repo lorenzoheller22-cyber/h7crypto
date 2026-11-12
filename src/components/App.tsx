@@ -4,6 +4,7 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction, VersionedTransaction } from "@solana/web3.js";
 import { Positions } from "./Positions";
+import { Simulator } from "./Simulator";
 import { TrustButton } from "./TrustButton";
 import { savePosition } from "@/lib/positions";
 import { buildCreateTx, getPlatformConfig, getTrending, uploadMetadata, type TrendingToken } from "@/lib/pump.functions";
@@ -17,7 +18,7 @@ const ago = (ts: number | null) => {
 };
 
 type Filter = "all" | "pump.fun" | "dexscreener";
-type Tab = "trending" | "coins";
+type Tab = "trending" | "coins" | "sim";
 
 export function App() {
   const [filter, setFilter] = useState<Filter>("all");
@@ -49,7 +50,7 @@ export function App() {
     [data, filter, q],
   );
 
-  const nav: [Tab, string][] = [["trending", "🔥 Copy Trending"], ["coins", "💧 Minhas Moedas"]];
+  const nav: [Tab, string][] = [["trending", "🔥 Copy Trending"], ["coins", "💧 Minhas Moedas"], ["sim", "🧪 Simulação"]];
   return (
     <div className="flex min-h-screen font-mono">
       <aside className="sticky top-0 hidden h-screen w-56 shrink-0 flex-col border-r border-border bg-card/60 p-4 md:flex">
@@ -89,7 +90,7 @@ export function App() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6">
-        {tab === "coins" ? <Positions /> : <>
+        {tab === "coins" ? <Positions /> : tab === "sim" ? <Simulator tokens={data ?? []} /> : <>
         <section className="mb-6">
           <h1 className="text-3xl md:text-5xl font-bold leading-tight">
             Copie o que está <span className="text-primary glow">pumpando</span>.<br />Lance em 1 clique.
