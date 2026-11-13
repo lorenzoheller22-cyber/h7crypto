@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 
@@ -32,8 +33,8 @@ export function TrustButton() {
     }
   };
   return (
-    <button onClick={onClick} disabled={connecting} className="border border-primary bg-primary/10 px-3 py-2 text-xs font-bold text-primary hover:bg-primary/20 disabled:opacity-50">
+    <Button variant="ghost" onClick={onClick} disabled={connecting} className="border border-primary bg-primary/10 px-3 py-2 text-xs font-bold text-primary hover:bg-primary/20 disabled:opacity-50">
       {connecting ? "Conectando..." : "👻 Conectar Phantom"}
-    </button>
+    </Button>
   );
 }

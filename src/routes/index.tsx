@@ -7,9 +7,9 @@ const WalletShell = lazy(() => import("@/lib/polyfills").then(() => import("@/co
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "CopyTrend — Copie tokens em alta e lance na Pump.fun" },
+      { title: "HELLER — Moedas em alta na Solana" },
       { name: "description", content: "Feed ao vivo de tokens trending da Solana e Pump.fun. Copie em 1 clique e faça deploy com dev buy." },
-      { property: "og:title", content: "CopyTrend — Copy Trending Coins na Pump.fun" },
+      { property: "og:title", content: "HELLER — Moedas em alta na Solana" },
       { property: "og:description", content: "Copie tokens em alta e lance na Pump.fun com dev buy e prioridade." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

@@ -31,3 +31,5 @@ use the editor.
 
 ## Project rules
 - Client builds resolve `buffer`/`node:buffer` to the npm `buffer` package via a plugin in vite.config.ts — production otherwise stubs it empty and Solana libs crash on load.
+
+- Keep the wallet-inspired application shell and its responsive navigation in the existing client App; shared visual roles live in global CSS so wallet, launch and simulation views stay consistent.

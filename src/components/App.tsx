@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { Button } from "@/components/ui/button";
+import { ArrowUpRight, ChartNoAxesCombined, ChevronRight, Copy, FlaskConical, House, Layers, RefreshCw, Search, Wallet, X, Zap } from "lucide-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction, VersionedTransaction } from "@solana/web3.js";
 import { Positions } from "./Positions";
@@ -35,7 +37,7 @@ export function App() {
     load(); const id = setInterval(load, 15000);
     return () => { on = false; clearInterval(id); };
   }, [publicKey, connection]);
-  const { data, isFetching, dataUpdatedAt } = useQuery({
+  const { data, isFetching, dataUpdatedAt, refetch } = useQuery({
     queryKey: ["trending"],
     queryFn: () => getTrending(),
     refetchInterval: 15000,
@@ -50,86 +52,49 @@ export function App() {
     [data, filter, q],
   );
 
-  const nav: [Tab, string][] = [["trending", "🔥 Copy Trending"], ["coins", "💧 Minhas Moedas"], ["sim", "🧪 Simulação"]];
+  const nav = [
+    { key: "trending" as Tab, label: "Descobrir", icon: House },
+    { key: "coins" as Tab, label: "Minhas moedas", icon: Layers },
+    { key: "sim" as Tab, label: "Simulação", icon: FlaskConical },
+  ];
   return (
-    <div className="flex min-h-screen">
-      <aside className="sticky top-0 hidden h-screen w-56 shrink-0 flex-col border-r border-border bg-card/60 p-4 md:flex">
-        <div className="mb-8 flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center bg-primary font-bold text-primary-foreground">H</span>
-          <span className="font-bold tracking-widest">HELLER</span>
-        </div>
-        <nav className="space-y-1 text-sm">
-          {nav.map(([k, l]) => (
-            <button key={k} onClick={() => setTab(k)} className={`w-full px-3 py-2 text-left ${tab === k ? "border-l-2 border-primary bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}>{l}</button>
-          ))}
+    <div className="app-shell min-h-screen">
+      <aside className="desktop-sidebar">
+        <a href="/" className="brand"><span className="brand-mark"><Zap /></span>HELLER<span className="text-primary">.</span></a>
+        <div className="sidebar-caption">SEU ESPAÇO NA SOLANA</div>
+        <nav className="space-y-2">
+          {nav.map(({ key, label, icon: Icon }) => <Button key={key} variant="ghost" onClick={() => setTab(key)} className={`sidebar-link ${tab === key ? "is-active" : ""}`}><Icon />{label}{tab === key && <ChevronRight className="ml-auto" />}</Button>)}
         </nav>
-        <div className="mt-auto border-t border-border pt-3 text-xs">
-          <div className="font-bold">Lorenzo Heller</div>
-          <div className={publicKey ? "text-primary" : "text-muted-foreground"}>● {publicKey ? "Online" : "Desconectado"}</div>
-        </div>
+        <div className="mt-auto border-t border-border pt-5"><div className="flex items-center gap-3"><span className="profile-avatar">LH</span><div><div className="text-sm font-semibold">Lorenzo Heller</div><div className="mt-1 text-xs text-muted-foreground">{publicKey ? "Carteira conectada" : "Carteira desconectada"}</div></div></div></div>
       </aside>
-      <div className="min-w-0 flex-1">
-      <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
-        <div className="flex items-center justify-between gap-2 px-4 py-3">
-          <div className="flex items-center gap-2 md:hidden">
-            <span className="flex h-7 w-7 items-center justify-center bg-primary font-bold text-primary-foreground">H</span>
-            <span className="font-bold">HELLER</span>
-          </div>
-          <span className="hidden text-xs text-muted-foreground md:inline">// terminal de lançamento · pump.fun</span>
-          <div className="flex items-center gap-2">
-            {balance !== null && <span className="border border-primary/50 px-2 py-1.5 text-xs text-primary">{balance.toFixed(3)} SOL</span>}
-            <TrustButton />
-            <WalletMultiButton />
-          </div>
-        </div>
-        <div className="flex border-t border-border md:hidden">
-          {nav.map(([k, l]) => (
-            <button key={k} onClick={() => setTab(k)} className={`flex-1 py-2 text-xs ${tab === k ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}>{l}</button>
-          ))}
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-4 py-6">
-        {tab === "coins" ? <Positions /> : tab === "sim" ? <Simulator tokens={data ?? []} /> : <>
-        <section className="mb-6">
-          <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-primary"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />Ao vivo na Solana</span>
-          <h1 className="font-display text-4xl md:text-6xl font-bold leading-[1.05] tracking-tight">
-            Pegue a onda <span className="text-primary glow">antes</span><br />de todo mundo.
-          </h1>
-          <p className="mt-3 max-w-xl text-muted-foreground text-base">
-            Veja as moedas que estão bombando agora, copie em 1 toque e lance na Pump.fun com Dev Buy e prioridade máxima.
-          </p>
-        </section>
-
-        <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
-          {(["all", "pump.fun", "dexscreener"] as Filter[]).map((f) => (
-            <button key={f} onClick={() => setFilter(f)}
-              className={`border px-3 py-1.5 uppercase ${filter === f ? "border-primary text-primary bg-primary/10" : "border-border text-muted-foreground hover:text-foreground"}`}>
-              {f}
-            </button>
-          ))}
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="> buscar ticker..."
-            className="ml-auto w-48 border border-border bg-card px-3 py-1.5 outline-none focus:border-primary" />
-          <span className="flex items-center gap-1.5 text-muted-foreground">
-            <span className={`h-2 w-2 rounded-full bg-primary ${isFetching ? "animate-ping" : ""}`} />
-            LIVE {dataUpdatedAt ? new Date(dataUpdatedAt).toLocaleTimeString() : ""}
-          </span>
-        </div>
-
-        {!data ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 9 }).map((_, i) => <div key={i} className="h-36 animate-pulse border border-border bg-card" />)}
-          </div>
-        ) : list.length === 0 ? (
-          <p className="text-muted-foreground">Nenhum token encontrado.</p>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {list.map((t) => <TokenCard key={t.mint} t={t} onCopy={() => setCopying(t)} />)}
-          </div>
-        )}
-        </>}
-      </main>
+      <div className="workspace">
+        <header className="app-header">
+          <a href="/" className="brand md:hidden"><span className="brand-mark"><Zap /></span>HELLER<span className="text-primary">.</span></a>
+          <div className="hidden md:block"><span className="text-sm text-muted-foreground">Bem-vindo de volta,</span><div className="font-semibold">Lorenzo Heller <span className="text-primary">↗</span></div></div>
+          <div className="header-wallet"><TrustButton />{publicKey && <WalletMultiButton />}</div>
+        </header>
+        <main className="main-content">
+          <section className="balance-section">
+            <div className="flex items-center justify-between gap-3"><span className="flex items-center gap-2 text-sm text-muted-foreground"><Wallet className="h-4 w-4" />Saldo da carteira</span><span className="network-badge"><span />Solana Mainnet</span></div>
+            <div className="mt-4 flex items-baseline gap-3"><span className="balance-value">{balance === null ? "—" : balance.toFixed(3)}</span><span className="text-lg text-muted-foreground">SOL</span></div>
+            <div className="mt-2 text-xs text-muted-foreground">{publicKey ? `${publicKey.toBase58().slice(0, 6)}…${publicKey.toBase58().slice(-5)}` : "Phantom · Sua carteira, seu controle"}</div>
+            <div className="quick-actions">
+              {[{ label: "Explorar", icon: Search, target: "trending" as Tab }, { label: "Lançamentos", icon: ArrowUpRight, target: "coins" as Tab }, { label: "Minha carteira", icon: Wallet, target: "coins" as Tab }, { label: "Simular", icon: FlaskConical, target: "sim" as Tab }].map(({ label, icon: Icon, target }) => <div key={label} className="quick-action"><Button variant="secondary" size="icon" title={label} aria-label={label} onClick={() => setTab(target)}><Icon /></Button><span>{label}</span></div>)}
+            </div>
+          </section>
+          {tab === "coins" ? <><div className="section-heading"><div><span className="section-eyebrow">SEU PORTFÓLIO</span><h1>Minhas moedas</h1></div><Layers className="text-primary" /></div><Positions /></> : tab === "sim" ? <><div className="section-heading"><div><span className="section-eyebrow">SEM SOL REAL</span><h1>Simulação</h1></div><FlaskConical className="text-primary" /></div><Simulator tokens={data ?? []} /></> : <>
+            <section className="section-heading"><div><span className="section-eyebrow">DESCUBRA O PRÓXIMO MOVIMENTO</span><h1>Moedas em alta<span className="text-primary">.</span></h1></div><Button variant="ghost" size="icon" title="Atualizar moedas" aria-label="Atualizar moedas" onClick={() => void refetch()}><RefreshCw className={isFetching ? "animate-spin" : ""} /></Button></section>
+            <div className="market-summary"><ChartNoAxesCombined className="h-4 w-4 text-primary" /><span>Solana & Pump.fun</span><span className="ml-auto flex items-center gap-2 text-xs text-muted-foreground"><span className="live-dot" />{data ? `${data.length} tokens` : "Atualizando"}</span></div>
+            <div className="feed-toolbar">
+              <div className="filter-tabs">{(["all", "pump.fun", "dexscreener"] as Filter[]).map((f) => <Button variant="ghost" size="sm" key={f} onClick={() => setFilter(f)} className={filter === f ? "is-active" : ""}>{f === "all" ? "Todas" : f === "pump.fun" ? "Pump.fun" : "DexScreener"}</Button>)}</div>
+              <label className="search-field"><Search className="h-4 w-4" /><input aria-label="Buscar moedas" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar moeda..." /></label>
+            </div>
+            {!data ? <div className="token-grid">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-44 animate-pulse rounded-2xl bg-card" />)}</div> : list.length === 0 ? <div className="py-12 text-center text-sm text-muted-foreground">Nenhuma moeda encontrada.</div> : <div className="token-grid">{list.map((t) => <TokenCard key={t.mint} t={t} onCopy={() => setCopying(t)} />)}</div>}
+            <div className="feed-footer"><span className="live-dot" />{dataUpdatedAt ? `Atualizado ${new Date(dataUpdatedAt).toLocaleTimeString("pt-BR")}` : "Conectando ao mercado"}<span className="ml-auto">Pump.fun · Solana</span></div>
+          </>}
+        </main>
       </div>
+      <nav className="bottom-nav" aria-label="Navegação principal">{nav.map(({ key, label, icon: Icon }) => <Button key={key} variant="ghost" onClick={() => setTab(key)} className={tab === key ? "is-active" : ""}><Icon /><span>{label}</span></Button>)}<Button variant="default" size="icon" className="bottom-launch" title="Explorar moedas para copiar" aria-label="Explorar moedas para copiar" onClick={() => setTab("trending")}><Copy /></Button></nav>
       {copying && <LaunchModal token={copying} onClose={() => setCopying(null)} onDone={() => { setCopying(null); setTab("coins"); }} />}
     </div>
   );
@@ -137,30 +102,15 @@ export function App() {
 
 function TokenCard({ t, onCopy }: { t: TrendingToken; onCopy: () => void }) {
   return (
-    <div className="group border border-border bg-card p-3 transition hover:border-primary/60">
-      <div className="flex gap-3">
-        {t.image ? <img src={t.image} alt={t.symbol} loading="lazy" className="h-16 w-16 shrink-0 object-cover border border-border" />
-          : <div className="h-16 w-16 shrink-0 bg-muted" />}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-2">
-            <span className="truncate font-bold text-primary">${t.symbol}</span>
-            <span className="text-[10px] uppercase text-muted-foreground border border-border px-1">{t.source}</span>
-          </div>
-          <div className="truncate text-sm">{t.name}</div>
-          <div className="mt-1 grid grid-cols-2 gap-x-2 text-xs text-muted-foreground">
-            <span>MC <b className="text-foreground">{fmtUsd(t.marketCap)}</b></span>
-            <span>VOL <b className="text-foreground">{fmtUsd(t.volume24h)}</b></span>
-            <span>AGE <b className="text-foreground">{ago(t.createdAt)}</b></span>
-            <span>24h <b className={t.change >= 0 ? "text-primary" : "text-destructive"}>{t.change >= 0 ? "+" : ""}{t.change.toFixed(1)}%</b></span>
-          </div>
-        </div>
+    <article className="token-card">
+      <div className="flex items-center gap-3">
+        {t.image ? <img src={t.image} alt={t.symbol} loading="lazy" className="token-image" /> : <div className="token-image token-fallback">{t.symbol.slice(0, 2)}</div>}
+        <div className="min-w-0 flex-1"><h2 className="truncate text-sm font-semibold">{t.name}</h2><div className="mt-1 text-xs text-muted-foreground">${t.symbol} <span className="mx-1">·</span> {ago(t.createdAt)}</div></div>
+        <span className={`change-badge ${t.change >= 0 ? "positive" : "negative"}`}>{t.change >= 0 ? "+" : ""}{t.change.toFixed(1)}%</span>
       </div>
-      <div className="mt-3 flex gap-2 text-xs">
-        <button onClick={onCopy} className="flex-1 bg-primary py-2 font-bold text-primary-foreground hover:brightness-110">⧉ COPY &amp; LAUNCH</button>
-        <a href={`https://pump.fun/coin/${t.mint}`} target="_blank" rel="noreferrer" className="border border-border px-2 py-2 hover:border-primary">pump</a>
-        <a href={`https://dexscreener.com/solana/${t.mint}`} target="_blank" rel="noreferrer" className="border border-border px-2 py-2 hover:border-primary">dex</a>
-      </div>
-    </div>
+      <div className="token-metrics"><div><span>Market cap</span><strong>{fmtUsd(t.marketCap)}</strong></div><div><span>Volume 24h</span><strong>{fmtUsd(t.volume24h)}</strong></div><div className="text-right"><span>Origem</span><strong>{t.source === "pump.fun" ? "Pump.fun" : "DexScreener"}</strong></div></div>
+      <div className="flex items-center gap-2 border-t border-border pt-3"><Button onClick={onCopy} className="copy-cta flex-1"><Copy />Copiar moeda<ArrowUpRight className="ml-auto" /></Button><Button asChild variant="ghost" size="icon" title="Ver na Pump.fun"><a href={`https://pump.fun/coin/${t.mint}`} target="_blank" rel="noreferrer" aria-label={`Ver ${t.symbol} na Pump.fun`}><Zap /></a></Button><Button asChild variant="ghost" size="icon" title="Ver no DexScreener"><a href={`https://dexscreener.com/solana/${t.mint}`} target="_blank" rel="noreferrer" aria-label={`Ver ${t.symbol} no DexScreener`}><ChartNoAxesCombined /></a></Button></div>
+    </article>
   );
 }
 
@@ -238,8 +188,8 @@ function LaunchModal({ token, onClose, onDone }: { token: TrendingToken; onClose
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur" onClick={() => !busy && onClose()}>
       <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto border border-primary/50 bg-card p-5 shadow-[var(--shadow-glow)]" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-bold"><span className="text-primary">&gt;</span> copy_launch <span className="text-muted-foreground">${token.symbol}</span></h2>
-          <button onClick={onClose} disabled={busy} className="text-muted-foreground hover:text-foreground">[x]</button>
+          <h2 className="font-bold">Criar moeda · <span className="text-muted-foreground">${token.symbol}</span></h2>
+          <Button variant="ghost" onClick={onClose} disabled={busy} aria-label="Fechar lançamento" className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></Button>
         </div>
 
         {result ? (
@@ -250,7 +200,7 @@ function LaunchModal({ token, onClose, onDone }: { token: TrendingToken; onClose
               <a className="bg-primary px-3 py-2 font-bold text-primary-foreground" href={`https://pump.fun/coin/${result.mint}`} target="_blank" rel="noreferrer">Ver no Pump.fun ↗</a>
               <a className="border border-border px-3 py-2 hover:border-primary" href={`https://dexscreener.com/solana/${result.mint}`} target="_blank" rel="noreferrer">DexScreener ↗</a>
               <a className="border border-border px-3 py-2 hover:border-primary" href={`https://solscan.io/tx/${result.sig}`} target="_blank" rel="noreferrer">Solscan ↗</a>
-              <button onClick={onDone} className="w-full bg-primary px-3 py-2 font-bold text-primary-foreground">💧 Ir para Minhas Moedas (vender / DUMP ALL)</button>
+              <Button variant="ghost" onClick={onDone} className="w-full bg-primary px-3 py-2 font-bold text-primary-foreground">💧 Ir para Minhas Moedas (vender / DUMP ALL)</Button>
             </div>
           </div>
         ) : (
@@ -275,11 +225,11 @@ function LaunchModal({ token, onClose, onDone }: { token: TrendingToken; onClose
               <div className="mb-2 flex justify-between"><span>DEV BUY (SOL)</span><b className="text-primary">{f.devBuy} SOL</b></div>
               <input type="range" min={0} max={5} step={0.05} value={f.devBuy} onChange={set("devBuy")} className="w-full accent-[var(--primary)]" />
               <div className="mt-1 flex gap-1">{[0.2, 0.5, 1, 2].map((v) => (
-                <button key={v} onClick={() => setF({ ...f, devBuy: v })} className={`border px-2 py-0.5 ${f.devBuy === v ? "border-primary text-primary" : "border-border"}`}>{v}</button>))}
+                <Button variant="ghost" key={v} onClick={() => setF({ ...f, devBuy: v })} className={`border px-2 py-0.5 ${f.devBuy === v ? "border-primary text-primary" : "border-border"}`}>{v}</Button>))}
               </div>
               <div className="mt-3 mb-1">PRIORIDADE</div>
               <div className="flex gap-1">{[["Normal", 0.0001], ["Rápida", 0.0005], ["Turbo", 0.002], ["Degen", 0.005]].map(([l, v]) => (
-                <button key={l} onClick={() => setF({ ...f, priority: v as number })} className={`flex-1 border px-2 py-1 ${f.priority === v ? "border-primary text-primary bg-primary/10" : "border-border"}`}>{l} <span className="text-muted-foreground">{v}</span></button>))}
+                <Button variant="ghost" key={l} onClick={() => setF({ ...f, priority: v as number })} className={`flex-1 border px-2 py-1 ${f.priority === v ? "border-primary text-primary bg-primary/10" : "border-border"}`}>{l} <span className="text-muted-foreground">{v}</span></Button>))}
               </div>
               <label className="mt-3 block">Slippage %<input className={inp} type="number" value={f.slippage} onChange={set("slippage")} /></label>
             </div>
@@ -303,9 +253,9 @@ function LaunchModal({ token, onClose, onDone }: { token: TrendingToken; onClose
 
             <div className="mt-4">
               {publicKey ? (
-                <button disabled={busy || !f.name || !f.symbol} onClick={launch} className="w-full bg-primary py-3 font-bold text-primary-foreground disabled:opacity-50 hover:brightness-110">
+                <Button variant="ghost" disabled={busy || !f.name || !f.symbol} onClick={launch} className="w-full bg-primary py-3 font-bold text-primary-foreground disabled:opacity-50 hover:brightness-110">
                   {busy ? "LANÇANDO..." : `🚀 DEPLOY NA PUMP.FUN (${total.toFixed(3)} SOL)`}
-                </button>
+                </Button>
               ) : (
                 <div className="flex flex-col items-center gap-2"><span className="text-xs text-muted-foreground">Conecte sua Phantom para lançar</span><TrustButton /></div>
               )}

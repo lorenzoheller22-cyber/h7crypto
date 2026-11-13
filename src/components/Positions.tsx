@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
@@ -26,10 +27,11 @@ export function Positions() {
     queryKey: ["balances", publicKey?.toBase58(), mints], enabled: !!publicKey && mints.length > 0,
     refetchInterval: 20000,
     queryFn: async () => {
+      if (!publicKey) return {};
       const out: Record<string, number> = {};
       await Promise.all(mints.map(async (m) => {
         try {
-          const r = await connection.getParsedTokenAccountsByOwner(publicKey!, { mint: new PublicKey(m) });
+          const r = await connection.getParsedTokenAccountsByOwner(publicKey, { mint: new PublicKey(m) });
           out[m] = r.value.reduce((s, a) => s + Number(a.account.data.parsed.info.tokenAmount.uiAmount ?? 0), 0);
         } catch { out[m] = 0; }
       }));
@@ -64,9 +66,9 @@ export function Positions() {
         <Stat label="Lucro" v={`${tot.diff >= 0 ? "+" : ""}${tot.diff.toFixed(3)} SOL (${tot.pct.toFixed(0)}%)`} good={tot.diff >= 0} />
       </div>
       <div className="mb-3 flex justify-end">
-        <button onClick={refresh} className="border border-border px-3 py-1.5 text-xs hover:border-primary">
+        <Button variant="ghost" onClick={refresh} className="border border-border px-3 py-1.5 text-xs hover:border-primary">
           <span className={loading ? "inline-block animate-spin" : ""}>↻</span> Atualizar
-        </button>
+        </Button>
       </div>
       {mine.length === 0 ? (
         <p className="border border-border bg-card p-6 text-sm text-muted-foreground">Nenhuma moeda criada com esta carteira ainda. Use COPY &amp; LAUNCH no feed.</p>
@@ -126,18 +128,18 @@ function Row({ p, c, tokens, value, diff, pct }: { p: Position; c: any; tokens: 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <span className="text-muted-foreground">Resgatar:</span>
         {[25, 50, 75, 100].map((v) => (
-          <button key={v} onClick={() => setPercent(v)} className={`border px-2 py-1 ${percent === v ? "border-primary bg-primary/10 text-primary" : "border-border"}`}>{v}%</button>
+          <Button variant="ghost" key={v} onClick={() => setPercent(v)} className={`border px-2 py-1 ${percent === v ? "border-primary bg-primary/10 text-primary" : "border-border"}`}>{v}%</Button>
         ))}
         <input type="range" min={1} max={100} value={percent} onChange={(e) => setPercent(Number(e.target.value))} className="w-28 accent-[var(--primary)]" />
         <b className="w-10 text-primary">{percent}%</b>
         <span className="text-muted-foreground">≈ {(value * percent / 100).toFixed(3)} SOL</span>
-        <button disabled={busy || tokens <= 0} onClick={() => sell(100)} className="ml-auto bg-destructive px-3 py-1.5 font-bold text-destructive-foreground disabled:opacity-50">🚨 DUMP ALL</button>
-        <button disabled={busy || tokens <= 0} onClick={() => sell()} className=" bg-primary px-3 py-1.5 font-bold text-primary-foreground disabled:opacity-50">
+        <Button variant="ghost" disabled={busy || tokens <= 0} onClick={() => sell(100)} className="ml-auto bg-destructive px-3 py-1.5 font-bold text-destructive-foreground disabled:opacity-50">🚨 DUMP ALL</Button>
+        <Button variant="ghost" disabled={busy || tokens <= 0} onClick={() => sell()} className=" bg-primary px-3 py-1.5 font-bold text-primary-foreground disabled:opacity-50">
           {busy ? "VENDENDO..." : tokens <= 0 ? "SEM SALDO" : `RESGATAR ${percent}%`}
-        </button>
+        </Button>
         <a href={`https://pump.fun/coin/${p.mint}`} target="_blank" rel="noreferrer" className="border border-border px-2 py-1.5 hover:border-primary">pump</a>
         <a href={`https://dexscreener.com/solana/${p.mint}`} target="_blank" rel="noreferrer" className="border border-border px-2 py-1.5 hover:border-primary">dex</a>
-        <button onClick={() => confirm("Remover da lista?") && removePosition(p.mint)} className="text-muted-foreground hover:text-destructive">[x]</button>
+        <Button variant="ghost" onClick={() => confirm("Remover da lista?") && removePosition(p.mint)} className="text-muted-foreground hover:text-destructive">[x]</Button>
       </div>
       {msg && <p className={`mt-2 break-all ${msg.ok ? "text-primary" : "text-destructive"}`}>{msg.ok ? "✓" : "ERRO:"} {msg.t} {msg.sig && <a className="underline" href={`https://solscan.io/tx/${msg.sig}`} target="_blank" rel="noreferrer">solscan ↗</a>}</p>}
     </div>
