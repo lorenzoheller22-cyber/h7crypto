@@ -6,142 +6,283 @@ import { PublicKey, VersionedTransaction } from "@solana/web3.js";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { buildSellTx, getCoinsInfo } from "@/lib/pump.functions";
 import { loadPositions, pnl, removePosition, type Position } from "@/lib/positions";
+import { 
+  ArrowUpRight, 
+  ExternalLink, 
+  Flame, 
+  Layers, 
+  RefreshCw, 
+  Rocket, 
+  Trash2, 
+  TrendingUp, 
+  Zap 
+} from "lucide-react";
 
 export function Positions() {
   const { connection } = useConnection();
-  const { publicKey } = useWallet();
+  const { publicKey, signTransaction } = useWallet();
   const [all, setAll] = useState<Position[]>([]);
+  const [sellingMint, setSellingMint] = useState<string | null>(null);
+
   useEffect(() => {
     const r = () => setAll(loadPositions());
-    r(); window.addEventListener("positions-changed", r);
+    r();
+    window.addEventListener("positions-changed", r);
     return () => window.removeEventListener("positions-changed", r);
   }, []);
+
   const mine = publicKey ? all.filter((p) => p.owner === publicKey.toBase58()) : [];
   const mints = mine.map((p) => p.mint);
 
   const info = useQuery({
-    queryKey: ["coins", mints], enabled: mints.length > 0,
-    queryFn: () => getCoinsInfo({ data: { mints } }), refetchInterval: 20000,
+    queryKey: ["coins", mints],
+    enabled: mints.length > 0,
+    queryFn: () => getCoinsInfo({ data: { mints } }),
+    refetchInterval: 15000,
   });
+
   const bal = useQuery({
-    queryKey: ["balances", publicKey?.toBase58(), mints], enabled: !!publicKey && mints.length > 0,
-    refetchInterval: 20000,
+    queryKey: ["balances", publicKey?.toBase58(), mints],
+    enabled: !!publicKey && mints.length > 0,
+    refetchInterval: 15000,
     queryFn: async () => {
       if (!publicKey) return {};
       const out: Record<string, number> = {};
-      await Promise.all(mints.map(async (m) => {
-        try {
-          const r = await connection.getParsedTokenAccountsByOwner(publicKey, { mint: new PublicKey(m) });
-          out[m] = r.value.reduce((s, a) => s + Number(a.account.data.parsed.info.tokenAmount.uiAmount ?? 0), 0);
-        } catch { out[m] = 0; }
-      }));
+      await Promise.all(
+        mints.map(async (m) => {
+          try {
+            const r = await connection.getParsedTokenAccountsByOwner(publicKey, { mint: new PublicKey(m) });
+            out[m] = r.value.reduce((s, a) => s + Number(a.account.data.parsed.info.tokenAmount.uiAmount ?? 0), 0);
+          } catch {
+            out[m] = 0;
+          }
+        }),
+      );
       return out;
     },
   });
 
-  const refresh = () => { info.refetch(); bal.refetch(); };
+  const refresh = () => {
+    info.refetch();
+    bal.refetch();
+  };
+
   const rows = mine.map((p) => {
     const c = info.data?.[p.mint];
     const tokens = bal.data?.[p.mint] ?? 0;
     const value = c ? tokens * c.priceSol : 0;
     return { p, c, tokens, value, ...pnl(value, p.investedSol) };
   });
-  const totInv = rows.reduce((s, r) => s + r.p.investedSol, 0);
-  const totVal = rows.reduce((s, r) => s + r.value, 0);
-  const tot = pnl(totVal, totInv);
-  const loading = info.isFetching || bal.isFetching;
 
-  if (!publicKey) return (
-    <div className="flex flex-col items-center gap-3 border border-border bg-card p-8 text-sm text-muted-foreground">
-      Conecte sua carteira para ver suas moedas criadas.<WalletMultiButton />
-    </div>
-  );
-
-  return (
-    <div>
-      <div className="mb-4 grid grid-cols-2 gap-2 text-xs md:grid-cols-4">
-        <Stat label="Moedas" v={String(mine.length)} />
-        <Stat label="Investido" v={`${totInv.toFixed(3)} SOL`} />
-        <Stat label="Valor atual" v={`${totVal.toFixed(3)} SOL`} />
-        <Stat label="Lucro" v={`${tot.diff >= 0 ? "+" : ""}${tot.diff.toFixed(3)} SOL (${tot.pct.toFixed(0)}%)`} good={tot.diff >= 0} />
-      </div>
-      <div className="mb-3 flex justify-end">
-        <Button variant="ghost" onClick={refresh} className="border border-border px-3 py-1.5 text-xs hover:border-primary">
-          <span className={loading ? "inline-block animate-spin" : ""}>↻</span> Atualizar
-        </Button>
-      </div>
-      {mine.length === 0 ? (
-        <p className="border border-border bg-card p-6 text-sm text-muted-foreground">Nenhuma moeda criada com esta carteira ainda. Use COPY &amp; LAUNCH no feed.</p>
-      ) : (
-        <div className="space-y-3">{rows.map((r) => <Row key={r.p.mint} {...r} />)}</div>
-      )}
-    </div>
-  );
-}
-
-function Stat({ label, v, good }: { label: string; v: string; good?: boolean }) {
-  return (
-    <div className="border border-border bg-card p-3">
-      <div className="text-muted-foreground uppercase">{label}</div>
-      <div className={`mt-1 font-bold ${good === undefined ? "" : good ? "text-primary" : "text-destructive"}`}>{v}</div>
-    </div>
-  );
-}
-
-function Row({ p, c, tokens, value, diff, pct }: { p: Position; c: any; tokens: number; value: number; diff: number; pct: number }) {
-  const { connection } = useConnection();
-  const { publicKey, signTransaction } = useWallet();
-  const [percent, setPercent] = useState(50);
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<{ ok: boolean; t: string; sig?: string } | null>(null);
-
-  async function sell(force?: number) {
-    if (!publicKey || !signTransaction || tokens <= 0) return;
-    const pctToSell = force ?? percent;
-    const dump = pctToSell === 100 && force === 100;
-    setBusy(true); setMsg(null);
+  const handleSellPercent = async (mint: string, percent: number) => {
+    if (!publicKey || !signTransaction) {
+      alert("Conecte sua carteira primeiro.");
+      return;
+    }
+    setSellingMint(mint);
     try {
-      const { tx } = await buildSellTx({ data: { publicKey: publicKey.toBase58(), mint: p.mint, percent: pctToSell, priorityFee: dump ? 0.005 : 0.0005, slippage: dump ? 25 : 15 } });
-      const vtx = VersionedTransaction.deserialize(Uint8Array.from(atob(tx), (ch) => ch.charCodeAt(0)));
-      const signed = await signTransaction(vtx);
-      const sig = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: true, maxRetries: 3 });
-      await connection.confirmTransaction(sig, "confirmed");
-      setMsg({ ok: true, t: `Vendido ${pctToSell}% — SOL enviado para sua carteira`, sig });
-    } catch (e: any) { setMsg({ ok: false, t: e?.message ?? String(e) }); } finally { setBusy(false); }
+      const { tx: b64 } = await buildSellTx({
+        data: {
+          publicKey: publicKey.toBase58(),
+          mint,
+          percent,
+          priorityFee: 0.005,
+          slippage: 15,
+        },
+      });
+
+      const raw = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      const tx = VersionedTransaction.deserialize(raw);
+      const signed = await signTransaction(tx);
+      const sig = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: false });
+
+      alert(`Ordem de venda (${percent}%) enviada com sucesso! Tx: ${sig.slice(0, 8)}...`);
+      setTimeout(() => refresh(), 2000);
+    } catch (e: any) {
+      alert(`Falha na venda: ${e?.message || e}`);
+    } finally {
+      setSellingMint(null);
+    }
+  };
+
+  if (!publicKey) {
+    return (
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-8 text-center space-y-3">
+        <Layers className="w-10 h-10 text-cyan-400 mx-auto opacity-80" />
+        <h3 className="font-bold text-white text-base">Conecte sua carteira para ver seus tokens</h3>
+        <p className="text-xs text-slate-400 max-w-sm mx-auto">
+          Gerencie suas posições, dê PUMP de impulso ou execute saídas rápidas e DUMP ALL.
+        </p>
+        <div className="inline-block [&_.wallet-adapter-button]:!rounded-xl [&_.wallet-adapter-button]:!bg-cyan-500 [&_.wallet-adapter-button]:!text-slate-950 [&_.wallet-adapter-button]:!font-bold">
+          <WalletMultiButton />
+        </div>
+      </div>
+    );
+  }
+
+  if (mine.length === 0) {
+    return (
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-8 text-center space-y-3">
+        <Rocket className="w-10 h-10 text-cyan-400 mx-auto opacity-80" />
+        <h3 className="font-bold text-white text-base">Nenhum token lançado nesta carteira</h3>
+        <p className="text-xs text-slate-400 max-w-sm mx-auto">
+          Vá na aba "Descobrir", escolha uma memecoin quente e clique em "COPIAR & LANÇAR".
+        </p>
+      </div>
+    );
   }
 
   return (
-    <div className="border border-border bg-card p-3 text-xs">
-      <div className="flex flex-wrap items-center gap-3">
-        {p.image ? <img src={p.image} alt="" className="h-12 w-12 border border-border object-cover" /> : <div className="h-12 w-12 bg-muted" />}
-        <div className="min-w-0 flex-1">
-          <div className="font-bold text-primary">${p.symbol} <span className="font-normal text-foreground">{p.name}</span></div>
-          <div className="text-muted-foreground">Criada {new Date(p.createdAt).toLocaleString()} · {c ? (c.complete ? "Migrada p/ Raydium" : `Curva ${c.progress.toFixed(0)}%`) : "carregando..."}</div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-base font-bold text-white">Minhas Memecoins Lançadas</h2>
+          <p className="text-xs text-slate-400">Controle de liquidez, impulso PUMP e saídas rápidas</p>
         </div>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-right md:grid-cols-4">
-          <span className="text-muted-foreground">Investido<br /><b className="text-foreground">{p.investedSol.toFixed(3)}</b></span>
-          <span className="text-muted-foreground">Valor<br /><b className="text-foreground">{value.toFixed(3)}</b></span>
-          <span className="text-muted-foreground">Lucro<br /><b className={diff >= 0 ? "text-primary" : "text-destructive"}>{diff >= 0 ? "+" : ""}{diff.toFixed(3)} ({pct.toFixed(0)}%)</b></span>
-          <span className="text-muted-foreground">Tokens<br /><b className="text-foreground">{tokens.toLocaleString(undefined, { maximumFractionDigits: 0 })}</b></span>
-        </div>
-      </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="text-muted-foreground">Resgatar:</span>
-        {[25, 50, 75, 100].map((v) => (
-          <Button variant="ghost" key={v} onClick={() => setPercent(v)} className={`border px-2 py-1 ${percent === v ? "border-primary bg-primary/10 text-primary" : "border-border"}`}>{v}%</Button>
-        ))}
-        <input type="range" min={1} max={100} value={percent} onChange={(e) => setPercent(Number(e.target.value))} className="w-28 accent-[var(--primary)]" />
-        <b className="w-10 text-primary">{percent}%</b>
-        <span className="text-muted-foreground">≈ {(value * percent / 100).toFixed(3)} SOL</span>
-        <Button variant="ghost" disabled={busy || tokens <= 0} onClick={() => sell(100)} className="ml-auto bg-destructive px-3 py-1.5 font-bold text-destructive-foreground disabled:opacity-50">🚨 DUMP ALL</Button>
-        <Button variant="ghost" disabled={busy || tokens <= 0} onClick={() => sell()} className=" bg-primary px-3 py-1.5 font-bold text-primary-foreground disabled:opacity-50">
-          {busy ? "VENDENDO..." : tokens <= 0 ? "SEM SALDO" : `RESGATAR ${percent}%`}
+        <Button size="sm" variant="outline" onClick={refresh} className="rounded-xl h-8 text-xs border-slate-800 bg-slate-900">
+          <RefreshCw className="w-3.5 h-3.5 mr-1 text-cyan-400" /> Atualizar PnL
         </Button>
-        <a href={`https://pump.fun/coin/${p.mint}`} target="_blank" rel="noreferrer" className="border border-border px-2 py-1.5 hover:border-primary">pump</a>
-        <a href={`https://dexscreener.com/solana/${p.mint}`} target="_blank" rel="noreferrer" className="border border-border px-2 py-1.5 hover:border-primary">dex</a>
-        <Button variant="ghost" onClick={() => confirm("Remover da lista?") && removePosition(p.mint)} className="text-muted-foreground hover:text-destructive">[x]</Button>
       </div>
-      {msg && <p className={`mt-2 break-all ${msg.ok ? "text-primary" : "text-destructive"}`}>{msg.ok ? "✓" : "ERRO:"} {msg.t} {msg.sig && <a className="underline" href={`https://solscan.io/tx/${msg.sig}`} target="_blank" rel="noreferrer">solscan ↗</a>}</p>}
+
+      <div className="grid grid-cols-1 gap-4">
+        {rows.map(({ p, c, tokens, value, diffSol, percent: pnlPercent }) => {
+          const isProfitable = diffSol >= 0;
+          const progress = c?.progress ?? 0;
+
+          return (
+            <div
+              key={p.mint}
+              className="rounded-2xl border border-cyan-950/60 bg-gradient-to-b from-slate-900/90 to-[#090d16] p-5 shadow-xl space-y-4"
+            >
+              {/* Header do Card */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={p.image || "/favicon.ico"}
+                    alt={p.name}
+                    className="w-12 h-12 rounded-xl object-cover border border-cyan-500/30 bg-slate-950 shrink-0"
+                  />
+                  <div>
+                    <h3 className="font-bold text-white text-base">{p.name}</h3>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs font-bold text-cyan-400">${p.symbol}</span>
+                      <span className="text-[11px] text-slate-500 font-mono">
+                        {p.mint.slice(0, 4)}...{p.mint.slice(-4)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Badge PnL */}
+                <div className="text-right">
+                  <span className={`text-base font-black ${isProfitable ? "text-emerald-400" : "text-rose-400"}`}>
+                    {isProfitable ? "+" : ""}{diffSol.toFixed(3)} SOL
+                  </span>
+                  <div className={`text-xs font-bold ${isProfitable ? "text-emerald-500" : "text-rose-500"}`}>
+                    {isProfitable ? "+" : ""}{pnlPercent.toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+
+              {/* Barra de Progresso da Bonding Curve (Até 85k / Raydium) */}
+              <div className="space-y-1.5 p-3 rounded-xl bg-slate-950/80 border border-slate-800/80">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400 flex items-center gap-1">
+                    <TrendingUp className="w-3.5 h-3.5 text-cyan-400" /> Progresso da Bonding Curve
+                  </span>
+                  <span className="font-bold text-white">{progress.toFixed(1)}% {c?.complete ? "🎓 GRADUADO!" : ""}</span>
+                </div>
+                <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
+                  <div
+                    className="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-all duration-300"
+                    style={{ width: `${Math.min(100, progress)}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-[10px] text-slate-500">
+                  <span>0k (Início)</span>
+                  <span>Meta: $85k (Raydium Pool)</span>
+                </div>
+              </div>
+
+              {/* Botões de Ação: PUMP e DUMP */}
+              <div className="space-y-2 pt-2 border-t border-slate-800/80">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {/* Botão de PUMP / Impulso no Topo */}
+                  <Button
+                    asChild
+                    className="w-full h-11 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-400 hover:opacity-90 text-slate-950 font-black text-xs uppercase shadow-lg shadow-orange-500/20"
+                  >
+                    <a href={`https://pump.fun/${p.mint}`} target="_blank" rel="noreferrer">
+                      <Flame className="w-4 h-4 mr-1.5 fill-current" />
+                      🚀 IMPULSO PUMP (SUBIR AO TOPO)
+                    </a>
+                  </Button>
+
+                  {/* Botão DUMP ALL 100% */}
+                  <Button
+                    onClick={() => handleSellPercent(p.mint, 100)}
+                    disabled={sellingMint === p.mint || tokens <= 0}
+                    className="w-full h-11 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs uppercase shadow-lg shadow-rose-600/20"
+                  >
+                    🚨 DUMP ALL (RESGATAR 100% DO SOL)
+                  </Button>
+                </div>
+
+                {/* Vendas Parciais DCA (25%, 50%, 75%) */}
+                <div className="grid grid-cols-4 gap-2 pt-1">
+                  {[25, 50, 75].map((pct) => (
+                    <Button
+                      key={pct}
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleSellPercent(p.mint, pct)}
+                      disabled={sellingMint === p.mint || tokens <= 0}
+                      className="rounded-xl h-8 text-[11px] font-bold border-slate-800 bg-slate-950 hover:bg-slate-800 text-slate-200"
+                    >
+                      Vender {pct}%
+                    </Button>
+                  ))}
+
+                  <button
+                    onClick={() => {
+                      if (confirm("Remover este token da sua lista de monitoramento?")) {
+                        removePosition(p.mint);
+                      }
+                    }}
+                    className="rounded-xl h-8 flex items-center justify-center text-slate-500 hover:text-rose-400 hover:bg-slate-950 border border-slate-800 text-xs"
+                    title="Remover do painel"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Links Rápidos DexScreener & Photon */}
+              <div className="flex items-center justify-between pt-2 border-t border-slate-800/40 text-xs text-slate-400">
+                <span>Hold: {tokens.toLocaleString()} tokens</span>
+                <div className="flex items-center gap-3">
+                  <a
+                    href={`https://dexscreener.com/solana/${p.mint}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:text-cyan-400 flex items-center gap-1"
+                  >
+                    DexScreener <ExternalLink className="w-3 h-3" />
+                  </a>
+                  <a
+                    href={`https://photon-sol.tinyastro.io/en/lp/${p.mint}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:text-cyan-400 flex items-center gap-1"
+                  >
+                    Photon <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
