@@ -228,3 +228,26 @@ export const buildSellTx = createServerFn({ method: "POST" })
     for (const b of buf) s += String.fromCharCode(b);
     return { tx: btoa(s) };
   });
+
+export const buildBuyTx = createServerFn({ method: "POST" })
+  .inputValidator((d: { publicKey: string; mint: string; solAmount: number; priorityFee: number; slippage: number }) => {
+    const sol = Number(d.solAmount);
+    if (!(sol > 0 && sol <= 5)) throw new Error("Valor de compra inválido");
+    return { ...d, solAmount: sol };
+  })
+  .handler(async ({ data }) => {
+    const r = await fetch("https://pumpportal.fun/api/trade-local", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        publicKey: data.publicKey, action: "buy", mint: data.mint,
+        denominatedInSol: "true", amount: data.solAmount,
+        slippage: data.slippage, priorityFee: data.priorityFee, pool: "auto",
+      }),
+    });
+    if (!r.ok) throw new Error(`PumpPortal: ${r.status} ${await r.text()}`);
+    const buf = new Uint8Array(await r.arrayBuffer());
+    let s = "";
+    for (const b of buf) s += String.fromCharCode(b);
+    return { tx: btoa(s) };
+  });

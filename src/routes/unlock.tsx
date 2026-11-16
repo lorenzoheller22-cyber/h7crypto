@@ -46,12 +46,12 @@ function Unlock() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0d0b1a] px-6 text-slate-100">
-      <form onSubmit={onSubmit} className="w-full max-w-sm space-y-5 rounded-3xl border border-purple-900/40 bg-[#160f2e] p-7 shadow-2xl">
+    <div className="flex min-h-screen items-center justify-center bg-background px-6 text-foreground">
+      <form onSubmit={onSubmit} className="w-full max-w-sm space-y-5 rounded-md border border-border bg-panel p-7">
         <div className="flex flex-col items-center gap-3">
-          <img src={h7Logo.url} alt="H7 CRYPTO" className="h-20 w-20 rounded-2xl border border-violet-500/40 object-cover" />
-          <h1 className="text-lg font-black tracking-widest">H7 CRYPTO</h1>
-          <p className="text-xs text-purple-300/60">Acesso privado</p>
+          <img src={h7Logo.url} alt="H7 CRYPTO" className="h-14 w-14 rounded object-cover" />
+          <h1 className="text-base font-semibold tracking-wide">H7 CRYPTO</h1>
+          <p className="text-xs text-muted-foreground">Acesso privado</p>
         </div>
         <input
           name="password"
@@ -59,10 +59,10 @@ function Unlock() {
           autoComplete="current-password"
           placeholder="Senha"
           required
-          className="h-12 w-full rounded-2xl border border-purple-900/50 bg-[#0b0818] px-4 text-sm outline-none focus:border-violet-500"
+          className="h-10 w-full rounded border border-border bg-background px-3 text-sm outline-none focus:border-primary"
         />
-        {error && <p className="text-center text-xs text-rose-400">{error}</p>}
-        <button disabled={busy} className="h-12 w-full rounded-2xl bg-violet-500 font-bold text-white hover:bg-violet-400 disabled:opacity-50">
+        {error && <p className="text-center text-xs text-destructive">{error}</p>}
+        <button disabled={busy} className="h-10 w-full rounded bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
           {busy ? "Verificando..." : "Entrar"}
         </button>
       </form>

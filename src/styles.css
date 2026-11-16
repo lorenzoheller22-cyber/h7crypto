@@ -30,7 +30,11 @@
  */
 
 @theme inline {
-  --font-display: "Space Grotesk", ui-sans-serif, sans-serif;
+  --font-display: "IBM Plex Sans", ui-sans-serif, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --color-positive: var(--positive);
+  --color-warning: var(--warning);
+  --color-panel: var(--panel);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -75,30 +79,32 @@
 
 /* Midnight surfaces and electric-blue actions, shared by all wallet views. */
 :root, .dark {
-  --radius: 1rem;
-  --background: oklch(0.135 0.021 278);
-  --foreground: oklch(0.96 0.006 280);
-  --card: oklch(0.215 0.022 278);
+  --radius: 0.375rem;
+  --background: oklch(0.155 0.012 265);
+  --panel: oklch(0.185 0.013 265);
+  --foreground: oklch(0.9 0.008 265);
+  --card: oklch(0.205 0.014 265);
   --card-foreground: var(--foreground);
-  --popover: oklch(0.22 0.025 278);
+  --popover: oklch(0.215 0.015 265);
   --popover-foreground: var(--foreground);
-  --primary: oklch(0.59 0.22 262);
+  --primary: oklch(0.56 0.22 264);
   --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.26 0.031 278);
+  --secondary: oklch(0.25 0.014 265);
   --secondary-foreground: var(--foreground);
-  --muted: oklch(0.24 0.021 278);
-  --muted-foreground: oklch(0.66 0.024 278);
-  --accent: oklch(0.29 0.05 268);
+  --muted: oklch(0.23 0.013 265);
+  --muted-foreground: oklch(0.62 0.015 265);
+  --accent: oklch(0.27 0.02 265);
   --accent-foreground: var(--foreground);
-  --destructive: oklch(0.68 0.19 22);
+  --destructive: oklch(0.63 0.21 22);
   --destructive-foreground: oklch(0.99 0 0);
-  --positive: oklch(0.77 0.15 159);
-  --border: oklch(0.32 0.02 278 / 0.6);
+  --positive: oklch(0.63 0.12 172);
+  --warning: oklch(0.78 0.14 75);
+  --border: oklch(0.29 0.014 265);
   --input: var(--border);
   --ring: var(--primary);
-  --shadow-glow: 0 8px 24px -12px color-mix(in oklab, var(--primary) 60%, transparent);
-  --shadow-surface: 0 12px 35px -20px oklch(0 0 0 / .65);
-  --balance-background: radial-gradient(ellipse at 18% 0%, color-mix(in oklab, var(--primary) 23%, transparent), transparent 65%);
+  --shadow-glow: none;
+  --shadow-surface: none;
+  --balance-background: none;
   --chart-1: var(--primary);
   --chart-2: var(--positive);
   --chart-3: var(--muted-foreground);
@@ -115,10 +121,11 @@
 }
 @layer base {
   * { border-color: var(--border); }
-  body { margin: 0; font-family: "Manrope", ui-sans-serif, sans-serif; background: var(--background); color: var(--foreground); -webkit-font-smoothing: antialiased; }
-  h1, h2, h3 { font-family: "Space Grotesk", sans-serif; letter-spacing: 0; }
+  body { margin: 0; font-family: "IBM Plex Sans", ui-sans-serif, sans-serif; background: var(--background); color: var(--foreground); -webkit-font-smoothing: antialiased; }
+  h1, h2, h3 { font-family: "IBM Plex Sans", sans-serif; letter-spacing: 0; }
   button, input, select, textarea { letter-spacing: 0; }
-  input:not([type=range]), textarea, select { border-radius: 10px; }
+  input:not([type=range]), textarea, select { border-radius: 4px; }
+  .num { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
   input[type=range] { accent-color: var(--primary); }
   button { transition: background-color .2s, color .2s; }
 }
@@ -171,10 +178,10 @@
 .bottom-nav > button svg { width: 20px; height: 20px; }
 .bottom-nav > button span { font-size: 8px; }
 .bottom-nav .bottom-launch { width: 51px; height: 51px; border-radius: 50%; margin-left: 5px; }
-.bg-card { border-radius: 16px; }
+
 .bg-card input, .bg-card textarea { padding: 9px 10px; }
-.bg-card img { border-radius: 12px; }
-.bg-card button { border-radius: 9px; }
+
+
 .bg-card button.bg-primary { color: var(--primary-foreground); }
 .bg-card button.bg-destructive { color: var(--destructive-foreground); }
 .bg-card .flex.gap-1 { flex-wrap: wrap; }
@@ -199,3 +206,9 @@
 }
 @media (min-width: 1200px) { .token-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+.wallet-adapter-button-trigger { background: var(--primary) !important; color: var(--primary-foreground) !important; border-radius: 4px !important; height: 32px !important; font-size: 12px !important; font-weight: 600 !important; padding: 0 12px !important; }
+@keyframes refill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.refresh-bar { transform-origin: left; animation: refill 15s linear forwards; }
+@keyframes alert-blink { 50% { opacity: .45; } }
+.alert-blink { animation: alert-blink 1.2s ease-in-out infinite; }

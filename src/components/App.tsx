@@ -2,34 +2,15 @@ import h7Logo from "@/assets/h7_logo.png.asset.json";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { Button } from "@/components/ui/button";
-import { 
-  ArrowUpRight, 
-  ChevronRight, 
-  Copy, 
-  Layers, 
-  RefreshCw, 
-  Search, 
-  ShieldCheck, 
-  Sparkles, 
-  TrendingUp, 
-  Wallet, 
-  X, 
-  Zap,
-  Globe,
-  Send,
-  Flame,
-  CheckCircle2,
-  AlertTriangle,
-  ExternalLink
-} from "lucide-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction, VersionedTransaction } from "@solana/web3.js";
+import { Keypair, LAMPORTS_PER_SOL, VersionedTransaction } from "@solana/web3.js";
+import { BarChart3, Globe, LineChart, RefreshCw, Search, Send, X } from "lucide-react";
 import { Positions } from "./Positions";
+import { ChartPanel } from "./ChartPanel";
 import { savePosition } from "@/lib/positions";
-import { buildCreateTx, getPlatformConfig, getTrending, uploadMetadata, type TrendingToken } from "@/lib/pump.functions";
+import { buildCreateTx, getTrending, uploadMetadata, type TrendingToken } from "@/lib/pump.functions";
 
-const fmtUsd = (n: number) =>
+export const fmtUsd = (n: number) =>
   n >= 1e9 ? `$${(n / 1e9).toFixed(2)}B` : n >= 1e6 ? `$${(n / 1e6).toFixed(2)}M` : n >= 1e3 ? `$${(n / 1e3).toFixed(1)}K` : `$${n.toFixed(0)}`;
 
 const ago = (ts: number | null) => {
@@ -39,16 +20,30 @@ const ago = (ts: number | null) => {
 };
 
 type Filter = "all" | "pump.fun" | "dexscreener";
-type Tab = "trending" | "coins";
+type Tab = "market" | "positions";
+
+function useSolPrice() {
+  return useQuery({
+    queryKey: ["sol-usd"],
+    refetchInterval: 60000,
+    queryFn: async () => {
+      const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd");
+      const j = await r.json();
+      return Number(j?.solana?.usd ?? 0) || null;
+    },
+  });
+}
 
 export function App() {
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
   const [copying, setCopying] = useState<TrendingToken | null>(null);
-  const [tab, setTab] = useState<Tab>("trending");
+  const [chart, setChart] = useState<{ mint: string; symbol: string } | null>(null);
+  const [tab, setTab] = useState<Tab>("market");
   const { connection } = useConnection();
   const { publicKey } = useWallet();
   const [balance, setBalance] = useState<number | null>(null);
+  const solPrice = useSolPrice().data ?? null;
 
   useEffect(() => {
     if (!publicKey) { setBalance(null); return undefined; }
@@ -66,255 +61,140 @@ export function App() {
   });
 
   const list = useMemo(
-    () =>
-      (data ?? []).filter(
-        (t) =>
-          (filter === "all" || t.source === filter) &&
-          (!q || `${t.name} ${t.symbol}`.toLowerCase().includes(q.toLowerCase())),
-      ),
+    () => (data ?? []).filter((t) => (filter === "all" || t.source === filter) && (!q || `${t.name} ${t.symbol}`.toLowerCase().includes(q.toLowerCase()))),
     [data, filter, q],
   );
 
-  const solPrice = 180; // Preço de referência aproximado em USD
-  const balanceUsd = balance !== null ? balance * solPrice : null;
+  const tabBtn = (t: Tab, label: string) => (
+    <button
+      onClick={() => setTab(t)}
+      className={`h-10 border-b-2 px-3 text-xs font-medium transition-colors ${tab === t ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+    >
+      {label}
+    </button>
+  );
 
   return (
-    <div className="min-h-screen bg-[#0d0b1a] text-slate-100 flex flex-col font-sans selection:bg-violet-500/30 selection:text-violet-200">
-      {/* Top Header Fintech / Street Aesthetic */}
-      <header className="sticky top-0 z-30 border-b border-violet-950/40 bg-[#0d0b1a]/90 backdrop-blur-xl px-4 py-3">
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
-          {/* Logo H7 & User Badge */}
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <header className="sticky top-0 z-30 border-b border-border bg-panel">
+        <div key={dataUpdatedAt} className="refresh-bar h-px bg-primary/70" />
+        <div className="mx-auto flex h-12 max-w-7xl items-center justify-between gap-3 px-3 sm:px-4">
           <div className="flex items-center gap-3">
-            <div className="relative flex shrink-0 items-center justify-center">
-              <img src={h7Logo.url} alt="H7 CRYPTO" className="w-11 h-11 shrink-0 rounded-xl object-cover border border-violet-500/40 shadow-[0_0_15px_rgba(139,92,246,0.35)]" />
-              <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#0d0b1a]" />
-            </div>
-
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-slate-400 font-medium">Olá,</span>
-                <span className="text-xs font-bold text-slate-200">Lorenzo</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="text-sm font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-violet-400">
-                  H7 CRYPTO
-                </span>
-                <span className="text-[9px] px-1.5 py-0.2 font-semibold uppercase tracking-widest bg-violet-500/10 border border-violet-500/30 text-violet-300 rounded-full">
-                  PRO
-                </span>
-              </div>
-            </div>
+            <img src={h7Logo.url} alt="H7 CRYPTO" className="h-8 w-8 shrink-0 rounded object-cover" />
+            <span className="text-sm font-semibold tracking-wide">H7 CRYPTO</span>
+            <span className="hidden items-center gap-1.5 border-l border-border pl-3 text-[11px] text-muted-foreground sm:flex">
+              <span className="h-1.5 w-1.5 rounded-full bg-positive" /> Solana Mainnet
+            </span>
           </div>
-
-          {/* Right Wallet Action */}
-          <div className="flex items-center gap-2">
-            <div className="[&_.wallet-adapter-button]:!h-9 [&_.wallet-adapter-button]:!px-3 [&_.wallet-adapter-button]:!text-xs [&_.wallet-adapter-button]:!font-semibold [&_.wallet-adapter-button]:!rounded-xl [&_.wallet-adapter-button]:!bg-violet-500/10 [&_.wallet-adapter-button]:!border [&_.wallet-adapter-button]:!border-violet-500/40 [&_.wallet-adapter-button]:hover:!bg-violet-500/20">
-              <WalletMultiButton />
+          <div className="flex items-center gap-4">
+            <div className="hidden text-right md:block">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">SOL/USD</div>
+              <div className="num text-xs">{solPrice ? solPrice.toFixed(2) : "—"}</div>
             </div>
+            <div className="hidden text-right sm:block">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Saldo</div>
+              <div className="num text-xs">
+                {balance !== null ? `${balance.toFixed(3)} SOL` : "—"}
+                {balance !== null && solPrice ? <span className="text-muted-foreground"> · ${(balance * solPrice).toFixed(2)}</span> : null}
+              </div>
+            </div>
+            <WalletMultiButton />
+          </div>
+        </div>
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-1 sm:px-2">
+          <nav className="flex">{tabBtn("market", "Mercado")}{tabBtn("positions", "Minhas moedas")}</nav>
+          <div className="flex items-center gap-2 pr-3 text-[11px] text-muted-foreground sm:hidden">
+            <span className="num">{balance !== null ? `${balance.toFixed(3)} SOL` : ""}</span>
           </div>
         </div>
       </header>
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-4 space-y-4">
-        {/* Hero Card: Saldo & Status da Conta */}
-        <section className="relative overflow-hidden rounded-2xl border border-violet-900/30 bg-gradient-to-br from-[#160f2e]/80 via-[#1e1338]/90 to-[#07090e] p-5 shadow-2xl">
-          <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 rounded-full bg-indigo-600/10 blur-3xl pointer-events-none" />
-
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-medium uppercase tracking-wider text-slate-400">Saldo Disponível</span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Solana Mainnet
-                </span>
-              </div>
-
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl md:text-4xl font-extrabold tracking-tight text-white">
-                  {balance !== null ? `${balance.toFixed(3)} SOL` : "— SOL"}
-                </span>
-                {balanceUsd !== null && (
-                  <span className="text-sm font-semibold text-slate-400">
-                    ≈ ${balanceUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                )}
-              </div>
-
-              <p className="text-xs text-slate-500 mt-1">
-                {publicKey ? `Carteira: ${publicKey.toBase58().slice(0, 4)}...${publicKey.toBase58().slice(-4)}` : "Conecte sua Phantom para lançar e gerenciar tokens"}
-              </p>
-            </div>
-
-            {/* Ações Rápidas em Pílula */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <Button
-                size="sm"
-                variant={tab === "trending" ? "default" : "outline"}
-                onClick={() => setTab("trending")}
-                className={`rounded-xl text-xs font-semibold h-10 ${tab === "trending" ? "bg-violet-500 hover:bg-violet-400 text-[#0b0818] font-bold shadow-lg shadow-violet-500/20" : "border-purple-900/40 bg-[#160f2e]/60 text-slate-300 hover:bg-purple-900/40"}`}
-              >
-                <Zap className="w-3.5 h-3.5 mr-1.5 text-violet-400" />
-                Copiar Meme
-              </Button>
-
-              <Button
-                size="sm"
-                variant={tab === "coins" ? "default" : "outline"}
-                onClick={() => setTab("coins")}
-                className={`rounded-xl text-xs font-semibold h-10 ${tab === "coins" ? "bg-violet-500 hover:bg-violet-400 text-[#0b0818] font-bold shadow-lg shadow-violet-500/20" : "border-purple-900/40 bg-[#160f2e]/60 text-slate-300 hover:bg-purple-900/40"}`}
-              >
-                <Layers className="w-3.5 h-3.5 mr-1.5 text-violet-400" />
-                Minhas Moedas
-              </Button>
-
-              <Button
-                asChild
-                size="sm"
-                variant="outline"
-                className="rounded-xl text-xs font-semibold h-10 border-purple-900/40 bg-[#160f2e]/60 text-slate-300 hover:bg-purple-900/40"
-              >
-                <a href="https://dexscreener.com/solana" target="_blank" rel="noreferrer">
-                  <TrendingUp className="w-3.5 h-3.5 mr-1.5 text-violet-400" />
-                  DexScreener
-                  <ArrowUpRight className="w-3 h-3 ml-1 opacity-60" />
-                </a>
-              </Button>
-
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => refetch()}
-                disabled={isFetching}
-                className="rounded-xl text-xs font-semibold h-10 border-purple-900/40 bg-[#160f2e]/60 text-slate-300 hover:bg-purple-900/40"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 text-violet-400 ${isFetching ? "animate-spin" : ""}`} />
-                Atualizar
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* View Switcher: Minhas Moedas ou Feed de Trending */}
-        {tab === "coins" ? (
-          <Positions />
+      <main className="mx-auto w-full max-w-7xl flex-1 px-3 py-4 sm:px-4">
+        {tab === "positions" ? (
+          <Positions onChart={setChart} />
         ) : (
-          <section className="space-y-3">
-            {/* Filtros e Busca */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
-              <div className="relative flex-1 max-w-md">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                <input
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder="Buscar memecoin em alta por nome ou ticker..."
-                  className="w-full h-10 pl-9 pr-3 rounded-xl bg-[#160f2e]/80 border border-purple-900/40 text-sm placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50"
-                />
-              </div>
-
-              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#160f2e]/80 border border-purple-900/40 text-xs">
+          <section className="overflow-hidden rounded-md border border-border bg-panel">
+            <div className="flex flex-col gap-2 border-b border-border p-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-1">
                 {(["all", "pump.fun", "dexscreener"] as Filter[]).map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => setFilter(f)}
-                    className={`px-3 py-1.5 rounded-lg capitalize font-medium transition-all ${filter === f ? "bg-violet-500 text-[#0b0818] font-bold" : "text-slate-400 hover:text-white"}`}
-                  >
-                    {f === "all" ? "Todos" : f}
+                  <button key={f} onClick={() => setFilter(f)}
+                    className={`h-7 rounded px-2.5 text-xs ${filter === f ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+                    {f === "all" ? "Todos" : f === "pump.fun" ? "Pump.fun" : "DexScreener"}
                   </button>
                 ))}
               </div>
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1 sm:w-64">
+                  <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar símbolo"
+                    className="h-7 w-full border border-border bg-background pl-7 pr-2 text-xs placeholder:text-muted-foreground focus:border-primary focus:outline-none" />
+                </div>
+                <button onClick={() => refetch()} aria-label="Atualizar" className="flex h-7 w-7 items-center justify-center rounded border border-border text-muted-foreground hover:text-foreground">
+                  <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+                </button>
+              </div>
             </div>
 
-            {/* Grid de Moedas em Alta */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="hidden grid-cols-[minmax(0,2.2fr)_1fr_1fr_0.8fr_0.6fr_auto] gap-3 border-b border-border px-3 py-2 text-[10px] uppercase tracking-wider text-muted-foreground md:grid">
+              <span>Ativo</span><span className="text-right">Market cap</span><span className="text-right">Volume 24h</span><span className="text-right">Var. 24h</span><span className="text-right">Idade</span><span className="w-[148px]" />
+            </div>
+
+            <div className="divide-y divide-border">
               {list.map((t) => (
-                <div
-                  key={`${t.source}-${t.mint}`}
-                  className="group relative rounded-2xl border border-purple-900/40/80 bg-[#160f2e]/50 hover:bg-[#160f2e]/90 hover:border-violet-500/40 p-4 transition-all duration-200 flex flex-col justify-between gap-3 shadow-lg hover:shadow-violet-500/5"
-                >
-                  <div className="flex items-start gap-3">
-                    <img
-                      src={t.image || "/favicon.ico"}
-                      alt={t.name}
-                      className="w-12 h-12 rounded-xl object-cover border border-purple-900/40 bg-[#0b0818] shrink-0 group-hover:scale-105 transition-transform"
-                      onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/favicon.ico"; }}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-1">
-                        <h4 className="font-bold text-white text-sm truncate">{t.name}</h4>
-                        <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-purple-900/40 text-slate-400">
-                          {t.source}
-                        </span>
+                <div key={`${t.source}-${t.mint}`} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-2.5 hover:bg-card md:grid-cols-[minmax(0,2.2fr)_1fr_1fr_0.8fr_0.6fr_auto]">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <img src={t.image || "/favicon.png"} alt="" className="h-7 w-7 shrink-0 rounded-full bg-secondary object-cover"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/favicon.png"; }} />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold">{t.symbol}</span>
+                        <span className="text-[10px] text-muted-foreground">{t.source === "pump.fun" ? "PUMP" : "DEX"}</span>
                       </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs font-semibold text-violet-400">${t.symbol}</span>
-                        <span className="text-[11px] text-slate-500">• {ago(t.createdAt ?? Date.now())}</span>
-                      </div>
-                      <div className="flex items-center gap-3 mt-1.5 text-xs">
-                        <span className="text-slate-300 font-semibold">{fmtUsd(t.marketCap)} MC</span>
-                        {t.volume24h ? <span className="text-slate-500 font-medium">{fmtUsd(t.volume24h)} Vol</span> : null}
+                      <div className="truncate text-[11px] text-muted-foreground">{t.name}</div>
+                      <div className="num mt-0.5 text-[11px] text-muted-foreground md:hidden">
+                        {fmtUsd(t.marketCap)} · <span className={t.change >= 0 ? "text-positive" : "text-destructive"}>{t.change >= 0 ? "+" : ""}{t.change.toFixed(1)}%</span> · {ago(t.createdAt)}
                       </div>
                     </div>
                   </div>
-
-                  <div className="pt-2 border-t border-purple-900/40/60 flex items-center justify-between gap-2">
-                    <a
-                      href={t.source === "pump.fun" ? `https://pump.fun/${t.mint}` : `https://dexscreener.com/solana/${t.mint}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs text-slate-400 hover:text-violet-400 flex items-center gap-1 transition-colors"
-                    >
-                      Ver Gráfico <ExternalLink className="w-3 h-3" />
-                    </a>
-
-                    <Button
-                      size="sm"
-                      onClick={() => setCopying(t)}
-                      className="rounded-xl h-8 px-3 text-xs bg-violet-500 hover:bg-violet-400 text-[#0b0818] font-bold shadow-md shadow-violet-500/20"
-                    >
-                      <Copy className="w-3.5 h-3.5 mr-1" />
-                      COPIAR & LANÇAR
-                    </Button>
+                  <span className="num hidden text-right text-xs md:block">{fmtUsd(t.marketCap)}</span>
+                  <span className="num hidden text-right text-xs text-muted-foreground md:block">{t.volume24h ? fmtUsd(t.volume24h) : "—"}</span>
+                  <span className={`num hidden text-right text-xs md:block ${t.change >= 0 ? "text-positive" : "text-destructive"}`}>{t.change >= 0 ? "+" : ""}{t.change.toFixed(2)}%</span>
+                  <span className="num hidden text-right text-xs text-muted-foreground md:block">{ago(t.createdAt)}</span>
+                  <div className="flex items-center gap-1.5">
+                    <button onClick={() => setChart({ mint: t.mint, symbol: t.symbol })} aria-label="Ver gráfico"
+                      className="flex h-7 w-7 items-center justify-center rounded border border-border text-muted-foreground hover:text-foreground">
+                      <LineChart className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={() => setCopying(t)} className="h-7 rounded bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+                      Copiar e lançar
+                    </button>
                   </div>
                 </div>
               ))}
+              {!list.length && (
+                <div className="flex flex-col items-center gap-2 py-16 text-xs text-muted-foreground">
+                  <BarChart3 className="h-5 w-5" /> {isFetching ? "Carregando mercado…" : "Nenhum ativo encontrado"}
+                </div>
+              )}
             </div>
           </section>
         )}
       </main>
 
-      {/* Modal Turbinado de Cópia & Lançamento com Sniper Score */}
-      {copying && (
-        <LaunchModal
-          token={copying}
-          onClose={() => setCopying(null)}
-          onSuccess={() => {
-            setCopying(null);
-            setTab("coins");
-          }}
-        />
-      )}
+      {copying && <LaunchModal token={copying} onClose={() => setCopying(null)} onSuccess={() => { setCopying(null); setTab("positions"); }} />}
+      {chart && <ChartPanel {...chart} onClose={() => setChart(null)} />}
     </div>
   );
 }
 
-// Modal Component com Radar de Metadados, Sniper Score e Selos de Confiança
-function LaunchModal({
-  token,
-  onClose,
-  onSuccess,
-}: {
-  token: TrendingToken;
-  onClose: () => void;
-  onSuccess: () => void;
-}) {
+const field = "h-8 w-full border border-border bg-background px-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none";
+
+function LaunchModal({ token, onClose, onSuccess }: { token: TrendingToken; onClose: () => void; onSuccess: () => void }) {
   const { connection } = useConnection();
   const wallet = useWallet();
   const [name, setName] = useState(token.name);
   const [symbol, setSymbol] = useState(token.symbol);
-  const [desc, setDesc] = useState(token.description || `H7 Edition of ${token.name}`);
+  const [desc, setDesc] = useState(token.description || "");
   const [devBuy, setDevBuy] = useState("0.2");
   const [twitter, setTwitter] = useState(token.twitter || "");
   const [telegram, setTelegram] = useState(token.telegram || "");
@@ -322,236 +202,110 @@ function LaunchModal({
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
 
-  // Cálculo Dinâmico do Sniper Score (0 a 100%)
   const devBuyNum = parseFloat(devBuy) || 0;
   const score = useMemo(() => {
-    let s = 40; // Base do token
-    if (devBuyNum >= 0.1 && devBuyNum <= 0.6) s += 25; // Dev buy na zona de ouro
+    let s = 40;
+    if (devBuyNum >= 0.1 && devBuyNum <= 0.6) s += 25;
     else if (devBuyNum > 0.6 && devBuyNum <= 1.0) s += 10;
     if (twitter.trim()) s += 15;
     if (telegram.trim()) s += 10;
     if (website.trim()) s += 10;
     return Math.min(100, s);
   }, [devBuyNum, twitter, telegram, website]);
+  const scoreColor = score >= 80 ? "bg-positive" : score >= 50 ? "bg-warning" : "bg-destructive";
+  const scoreText = score >= 80 ? "text-positive" : score >= 50 ? "text-warning" : "text-destructive";
 
   const handleLaunch = async () => {
-    if (!wallet.publicKey || !wallet.signTransaction) {
-      alert("Por favor, conecte sua carteira primeiro.");
-      return;
-    }
+    if (!wallet.publicKey || !wallet.signTransaction) { alert("Conecte sua carteira primeiro."); return; }
     setBusy(true);
-    setStatus("Preparando metadados...");
     try {
-      const cfg = await getPlatformConfig();
       const mintKeypair = Keypair.generate();
-
-      setStatus("Subindo imagem e metadados...");
-      const { uri: metadataUri } = await uploadMetadata({
-        data: {
-          name,
-          symbol,
-          description: desc,
-          imageUrl: token.image ?? undefined,
-          twitter: twitter.trim() || undefined,
-          telegram: telegram.trim() || undefined,
-          website: website.trim() || undefined,
-        },
-      });
-
-      setStatus("Construindo transação do contrato Pump.fun...");
-      const { tx: b64 } = await buildCreateTx({
-        data: {
-          publicKey: wallet.publicKey.toBase58(),
-          mint: mintKeypair.publicKey.toBase58(),
-          name,
-          symbol,
-          uri: metadataUri,
-          devBuySol: devBuyNum,
-          priorityFee: 0.0005,
-          slippage: 15,
-        },
-      });
-
-      setStatus("Aguardando assinatura da carteira Phantom...");
-      const raw = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-      const tx = VersionedTransaction.deserialize(raw);
+      setStatus("Enviando imagem e metadados");
+      const { uri } = await uploadMetadata({ data: {
+        name, symbol, description: desc, imageUrl: token.image ?? undefined,
+        twitter: twitter.trim() || undefined, telegram: telegram.trim() || undefined, website: website.trim() || undefined,
+      } });
+      setStatus("Montando transação");
+      const { tx: b64 } = await buildCreateTx({ data: {
+        publicKey: wallet.publicKey.toBase58(), mint: mintKeypair.publicKey.toBase58(),
+        name, symbol, uri, devBuySol: devBuyNum, priorityFee: 0.0005, slippage: 15,
+      } });
+      setStatus("Aguardando assinatura na carteira");
+      const tx = VersionedTransaction.deserialize(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)));
       tx.sign([mintKeypair]);
-
       const signed = await wallet.signTransaction(tx);
-      setStatus("Enviando para a Solana Mainnet...");
-      const sig = await connection.sendRawTransaction(signed.serialize(), {
-        skipPreflight: false,
-        maxRetries: 3,
-      });
-
-      savePosition({
-        mint: mintKeypair.publicKey.toBase58(),
-        owner: wallet.publicKey.toBase58(),
-        name,
-        symbol,
-        image: token.image,
-        investedSol: devBuyNum,
-        createdAt: Date.now(),
-        sig,
-      });
-
-      setStatus("Lançamento concluído com sucesso!");
-      setTimeout(() => onSuccess(), 1500);
+      setStatus("Enviando para a rede");
+      const sig = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: false, maxRetries: 3 });
+      savePosition({ mint: mintKeypair.publicKey.toBase58(), owner: wallet.publicKey.toBase58(), name, symbol, image: token.image, investedSol: devBuyNum, createdAt: Date.now(), sig });
+      setStatus("Lançamento confirmado");
+      setTimeout(onSuccess, 1200);
     } catch (e: any) {
       alert(`Erro no lançamento: ${e?.message || e}`);
-      setBusy(false);
-      setStatus("");
+      setBusy(false); setStatus("");
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-lg rounded-3xl border border-violet-500/40 bg-[#0a0f1d] p-6 shadow-2xl space-y-4 my-8">
-        <div className="flex items-center justify-between border-b border-purple-900/40 pb-3">
+    <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-background/80 sm:items-center sm:p-4">
+      <div className="w-full max-w-md rounded-t-md border border-border bg-panel sm:rounded-md">
+        <div className="flex h-11 items-center justify-between border-b border-border px-4">
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-violet-500/10 border border-violet-500/30 text-violet-400">
-              <Zap className="w-5 h-5" />
+            {token.image && <img src={token.image} alt="" className="h-6 w-6 rounded-full object-cover" />}
+            <span className="text-sm font-semibold">Novo lançamento</span>
+            <span className="text-xs text-muted-foreground">Pump.fun</span>
+          </div>
+          <button onClick={onClose} aria-label="Fechar" className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-secondary hover:text-foreground"><X className="h-4 w-4" /></button>
+        </div>
+
+        <div className="space-y-4 p-4">
+          <div className="rounded border border-border bg-background p-3">
+            <div className="mb-2 flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Índice de atratividade</span>
+              <span className={`num font-semibold ${scoreText}`}>{score}/100</span>
             </div>
-            <div>
-              <h3 className="font-bold text-white text-base">Lançar Cópia Turbinada</h3>
-              <p className="text-xs text-slate-400">Pump.fun Bonding Curve Direta</p>
+            <div className="h-1 overflow-hidden rounded-full bg-secondary"><div className={`h-full ${scoreColor} transition-all`} style={{ width: `${score}%` }} /></div>
+            <p className="mt-2 text-[11px] text-muted-foreground">Estimativa baseada em redes preenchidas e compra inicial entre 0,1 e 0,6 SOL. Não garante compradores.</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <label className="space-y-1"><span className="text-[11px] text-muted-foreground">Nome</span><input className={field} value={name} onChange={(e) => setName(e.target.value)} /></label>
+            <label className="space-y-1"><span className="text-[11px] text-muted-foreground">Símbolo</span><input className={field} value={symbol} onChange={(e) => setSymbol(e.target.value.toUpperCase())} /></label>
+          </div>
+          <label className="block space-y-1"><span className="text-[11px] text-muted-foreground">Descrição</span>
+            <textarea rows={2} className={`${field} h-auto py-2`} value={desc} onChange={(e) => setDesc(e.target.value)} /></label>
+
+          <div className="space-y-1">
+            <span className="text-[11px] text-muted-foreground">Compra inicial (SOL)</span>
+            <div className="flex gap-1.5">
+              {["0.1", "0.2", "0.5", "1.0"].map((v) => (
+                <button key={v} type="button" onClick={() => setDevBuy(v)}
+                  className={`num h-8 flex-1 rounded border text-xs ${devBuy === v ? "border-primary bg-primary/15 text-foreground" : "border-border text-muted-foreground hover:text-foreground"}`}>{v}</button>
+              ))}
+              <input type="number" step="0.05" value={devBuy} onChange={(e) => setDevBuy(e.target.value)} className={`${field} num w-20`} />
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-purple-900/40">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
 
-        {/* Radar de Atratividade / Sniper Score */}
-        <div className="rounded-2xl border border-violet-500/20 bg-[#160f2e]/80 p-4 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-violet-400" />
-              Radar de Snipers & Atratividade
-            </span>
-            <span className={`text-sm font-extrabold px-2 py-0.5 rounded-full ${score >= 80 ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : score >= 50 ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>
-              {score}% {score >= 80 ? "🟢 EXCELENTE" : score >= 50 ? "🟡 MODERADO" : "🔴 BAIXO"}
-            </span>
-          </div>
-
-          <div className="w-full bg-[#0b0818] h-2 rounded-full overflow-hidden border border-purple-900/40">
-            <div
-              className={`h-full transition-all duration-300 ${score >= 80 ? "bg-gradient-to-r from-emerald-500 to-violet-400" : score >= 50 ? "bg-amber-400" : "bg-red-500"}`}
-              style={{ width: `${score}%` }}
-            />
-          </div>
-          <p className="text-[11px] text-slate-400">
-            {score >= 80 ? "Condições ideais! Metadados completos e compra inicial calibrada atraem bots de compra." : "Preencha as redes e mantenha Dev Buy entre 0.1 e 0.5 SOL para atingir 90%+."}
-          </p>
-        </div>
-
-        {/* Campos de Nome e Ticker */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1">Nome da Moeda</label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full h-10 px-3 rounded-xl bg-[#0b0818] border border-purple-900/40 text-sm text-white focus:outline-none focus:border-violet-500"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1">Ticker / Símbolo</label>
-            <input
-              value={symbol}
-              onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-              className="w-full h-10 px-3 rounded-xl bg-[#0b0818] border border-purple-900/40 text-sm text-white focus:outline-none focus:border-violet-500"
-            />
-          </div>
-        </div>
-
-        {/* Dev Buy Calibrada */}
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="text-xs font-semibold text-slate-300">Sua Compra Inicial (Dev Buy)</label>
-            <span className="text-[11px] text-violet-400 font-semibold">Recomendado: 0.2 SOL</span>
-          </div>
-          <div className="grid grid-cols-4 gap-2 mb-2">
-            {["0.1", "0.2", "0.5", "1.0"].map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setDevBuy(v)}
-                className={`py-1.5 rounded-lg text-xs font-bold border transition-all ${devBuy === v ? "bg-violet-500 text-[#0b0818] border-violet-400" : "bg-[#0b0818] border-purple-900/40 text-slate-300 hover:border-slate-700"}`}
-              >
-                {v} SOL
-              </button>
+          <div className="space-y-1.5">
+            <span className="text-[11px] text-muted-foreground">Redes</span>
+            {[
+              { v: twitter, s: setTwitter, ph: "https://x.com/…", icon: <span className="text-[11px] font-semibold">X</span> },
+              { v: telegram, s: setTelegram, ph: "https://t.me/…", icon: <Send className="h-3 w-3" /> },
+              { v: website, s: setWebsite, ph: "https://…", icon: <Globe className="h-3 w-3" /> },
+            ].map((r, i) => (
+              <div key={i} className="relative">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground">{r.icon}</span>
+                <input value={r.v} onChange={(e) => r.s(e.target.value)} placeholder={r.ph} className={`${field} pl-7`} />
+              </div>
             ))}
           </div>
-          <input
-            type="number"
-            step="0.05"
-            value={devBuy}
-            onChange={(e) => setDevBuy(e.target.value)}
-            className="w-full h-10 px-3 rounded-xl bg-[#0b0818] border border-purple-900/40 text-sm text-white focus:outline-none focus:border-violet-500"
-          />
-        </div>
 
-        {/* Tríplice Coroa de Redes Sociais */}
-        <div className="space-y-2 pt-1 border-t border-purple-900/40">
-          <span className="text-xs font-bold text-slate-300 block">Metadados de Confiança (Tríplice Coroa)</span>
-          <div className="space-y-1.5 text-xs">
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold">X</span>
-              <input
-                value={twitter}
-                onChange={(e) => setTwitter(e.target.value)}
-                placeholder="https://x.com/seu_token"
-                className="w-full h-9 pl-8 pr-3 rounded-xl bg-[#0b0818] border border-purple-900/40 text-white focus:border-violet-500 text-xs"
-              />
-            </div>
-            <div className="relative">
-              <Send className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-              <input
-                value={telegram}
-                onChange={(e) => setTelegram(e.target.value)}
-                placeholder="https://t.me/seu_canal"
-                className="w-full h-9 pl-8 pr-3 rounded-xl bg-[#0b0818] border border-purple-900/40 text-white focus:border-violet-500 text-xs"
-              />
-            </div>
-            <div className="relative">
-              <Globe className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-              <input
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-                placeholder="https://seusite.com"
-                className="w-full h-9 pl-8 pr-3 rounded-xl bg-[#0b0818] border border-purple-900/40 text-white focus:border-violet-500 text-xs"
-              />
-            </div>
+          <div className="space-y-2 border-t border-border pt-3">
+            {status && <p className="text-center text-xs text-muted-foreground">{status}…</p>}
+            <button onClick={handleLaunch} disabled={busy}
+              className="h-10 w-full rounded bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+              {busy ? "Processando" : <>Lançar com <span className="num">{devBuyNum}</span> SOL</>}
+            </button>
           </div>
-        </div>
-
-        {/* Selos de Segurança Automáticos */}
-        <div className="grid grid-cols-3 gap-2 py-2 border-t border-purple-900/40 text-center">
-          <div className="p-2 rounded-xl bg-[#0b0818] border border-purple-900/40">
-            <span className="text-[10px] text-slate-400 block font-medium">Mint Authority</span>
-            <span className="text-xs font-bold text-emerald-400">🛡️ Revogado</span>
-          </div>
-          <div className="p-2 rounded-xl bg-[#0b0818] border border-purple-900/40">
-            <span className="text-[10px] text-slate-400 block font-medium">Freeze Authority</span>
-            <span className="text-xs font-bold text-emerald-400">❄️ Revogado</span>
-          </div>
-          <div className="p-2 rounded-xl bg-[#0b0818] border border-purple-900/40">
-            <span className="text-[10px] text-slate-400 block font-medium">Metadata</span>
-            <span className="text-xs font-bold text-violet-400">🔒 Travado</span>
-          </div>
-        </div>
-
-        {/* Botão de Disparo */}
-        <div className="space-y-2 pt-2">
-          {status && <p className="text-xs text-center font-medium text-violet-400 animate-pulse">{status}</p>}
-          <Button
-            onClick={handleLaunch}
-            disabled={busy}
-            className="w-full h-12 rounded-2xl bg-gradient-to-r from-violet-500 via-indigo-500 to-violet-400 hover:opacity-90 text-[#0b0818] font-black text-sm tracking-wider uppercase shadow-xl shadow-violet-500/25"
-          >
-            {busy ? "PROCESSANDO LANÇAMENTO..." : `LANÇAR NA PUMP.FUN COM ${devBuyNum} SOL`}
-          </Button>
         </div>
       </div>
     </div>
