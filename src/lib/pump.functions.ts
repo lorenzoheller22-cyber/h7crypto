@@ -122,55 +122,38 @@ export const uploadMetadata = createServerFn({ method: "POST" })
       if (!r.ok) throw new Error("Não foi possível baixar a imagem original");
       blob = await r.blob();
     } else throw new Error("Imagem obrigatória");
-    const fd = new FormData();
-    fd.append("file", blob, "image.png");
-    fd.append("name", data.name);
-    fd.append("symbol", data.symbol);
-    fd.append("description", data.description);
-    fd.append("twitter", data.twitter ?? "");
-    fd.append("telegram", data.telegram ?? "");
-    fd.append("website", data.website ?? "");
-    fd.append("showName", "true");
-    const errors: string[] = [];
-    // 1) Pump.fun IPFS (often blocked from servers with 403)
-    try {
-      const r = await fetch("https://pump.fun/api/ipfs", {
-        method: "POST",
-        body: fd,
-        headers: { "user-agent": "Mozilla/5.0", origin: "https://pump.fun", referer: "https://pump.fun/create" },
-      });
-      if (r.ok) {
-        const j = (await r.json()) as any;
-        if (j?.metadataUri) return { uri: j.metadataUri as string, name: j.metadata?.name ?? data.name, symbol: j.metadata?.symbol ?? data.symbol };
-      }
-      errors.push(`pump.fun ${r.status}`);
-    } catch (e: any) {
-      errors.push(`pump.fun ${e?.message ?? e}`);
-    }
-    // 2) Fallback storage
-    try {
-      const img = new FormData();
-      img.append("image", blob, "token-image.png");
-      const ir = await fetch("https://nft-storage.letsbonk22.workers.dev/upload/img", { method: "POST", body: img });
-      if (!ir.ok) throw new Error(`imagem ${ir.status}`);
-      const imageUri = (await ir.text()).trim();
-      if (!imageUri.startsWith("http")) throw new Error("imagem sem URL");
-      const mr = await fetch("https://nft-storage.letsbonk22.workers.dev/upload/meta", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          createdOn: "https://pump.fun", name: data.name, symbol: data.symbol, description: data.description,
-          image: imageUri, showName: true, twitter: data.twitter ?? "", telegram: data.telegram ?? "", website: data.website ?? "",
-        }),
-      });
-      if (!mr.ok) throw new Error(`metadados ${mr.status}`);
-      const uri = (await mr.text()).trim();
-      if (!uri.startsWith("http")) throw new Error("metadados sem URL");
-      return { uri, name: data.name, symbol: data.symbol };
-    } catch (e: any) {
-      errors.push(`reserva ${e?.message ?? e}`);
-    }
-    throw new Error(`Upload de imagem/metadados falhou (${errors.join("; ")})`);
+    if (blob.size > 4_500_000) throw new Error("Imagem muito grande (máx. 4,5 MB)");
+    const contentType = blob.type && blob.type.startsWith("image/") ? blob.type : "image/png";
+
+    // Store image + metadata JSON in our own storage and serve them from public URLs
+    // (pump.fun's old /api/ipfs endpoint is blocked for servers).
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const id = crypto.randomUUID().replace(/-/g, "");
+    const base = (process.env["PUBLIC_SITE_URL"] || "https://h7crypto.lovable.app").replace(/\/$/, "");
+    const bucket = supabaseAdmin.storage.from("token-metadata");
+
+    const img = await bucket.upload(`${id}/image`, blob, { contentType, upsert: false });
+    if (img.error) throw new Error(`Falha ao salvar a imagem: ${img.error.message}`);
+
+    const metadata = {
+      name: data.name,
+      symbol: data.symbol,
+      description: data.description,
+      image: `${base}/api/public/img/${id}`,
+      showName: true,
+      createdOn: "https://pump.fun",
+      twitter: data.twitter ?? "",
+      telegram: data.telegram ?? "",
+      website: data.website ?? "",
+    };
+    const meta = await bucket.upload(
+      `${id}/metadata.json`,
+      new Blob([JSON.stringify(metadata)], { type: "application/json" }),
+      { contentType: "application/json", upsert: false },
+    );
+    if (meta.error) throw new Error(`Falha ao salvar os metadados: ${meta.error.message}`);
+
+    return { uri: `${base}/api/public/meta/${id}`, name: data.name, symbol: data.symbol };
   });
 
 export const buildCreateTx = createServerFn({ method: "POST" })

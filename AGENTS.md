@@ -33,3 +33,4 @@ use the editor.
 - Client builds resolve `buffer`/`node:buffer` to the npm `buffer` package via a plugin in vite.config.ts — production otherwise stubs it empty and Solana libs crash on load.
 
 - Keep the wallet-inspired application shell and its responsive navigation in the existing client App; shared visual roles live in global CSS so wallet, launch and simulation views stay consistent.
+- Token image/metadata for launches are stored in the private Cloud bucket `token-metadata` and served via /api/public/meta/$id and /api/public/img/$id on the published domain — pump.fun's /api/ipfs blocks servers and public buckets are disallowed.

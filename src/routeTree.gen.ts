@@ -10,11 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicImgIdRouteImport } from './routes/api/public/img.$id'
 import { Route as ApiPublicMMintRouteImport } from './routes/api/public/m.$mint'
+import { Route as ApiPublicMetaIdRouteImport } from './routes/api/public/meta.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicImgIdRoute = ApiPublicImgIdRouteImport.update({
+  id: '/api/public/img/$id',
+  path: '/api/public/img/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicMMintRoute = ApiPublicMMintRouteImport.update({
@@ -22,31 +29,51 @@ const ApiPublicMMintRoute = ApiPublicMMintRouteImport.update({
   path: '/api/public/m/$mint',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicMetaIdRoute = ApiPublicMetaIdRouteImport.update({
+  id: '/api/public/meta/$id',
+  path: '/api/public/meta/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/public/img/$id': typeof ApiPublicImgIdRoute
   '/api/public/m/$mint': typeof ApiPublicMMintRoute
+  '/api/public/meta/$id': typeof ApiPublicMetaIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/public/img/$id': typeof ApiPublicImgIdRoute
   '/api/public/m/$mint': typeof ApiPublicMMintRoute
+  '/api/public/meta/$id': typeof ApiPublicMetaIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/public/img/$id': typeof ApiPublicImgIdRoute
   '/api/public/m/$mint': typeof ApiPublicMMintRoute
+  '/api/public/meta/$id': typeof ApiPublicMetaIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/public/m/$mint'
+  fullPaths:
+    '/' | '/api/public/img/$id' | '/api/public/m/$mint' | '/api/public/meta/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/public/m/$mint'
-  id: '__root__' | '/' | '/api/public/m/$mint'
+  to:
+    '/' | '/api/public/img/$id' | '/api/public/m/$mint' | '/api/public/meta/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/api/public/img/$id'
+    | '/api/public/m/$mint'
+    | '/api/public/meta/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiPublicImgIdRoute: typeof ApiPublicImgIdRoute
   ApiPublicMMintRoute: typeof ApiPublicMMintRoute
+  ApiPublicMetaIdRoute: typeof ApiPublicMetaIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -58,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/img/$id': {
+      id: '/api/public/img/$id'
+      path: '/api/public/img/$id'
+      fullPath: '/api/public/img/$id'
+      preLoaderRoute: typeof ApiPublicImgIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/m/$mint': {
       id: '/api/public/m/$mint'
       path: '/api/public/m/$mint'
@@ -65,12 +99,21 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMMintRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/meta/$id': {
+      id: '/api/public/meta/$id'
+      path: '/api/public/meta/$id'
+      fullPath: '/api/public/meta/$id'
+      preLoaderRoute: typeof ApiPublicMetaIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiPublicImgIdRoute: ApiPublicImgIdRoute,
   ApiPublicMMintRoute: ApiPublicMMintRoute,
+  ApiPublicMetaIdRoute: ApiPublicMetaIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
