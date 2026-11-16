@@ -207,7 +207,7 @@
 @media (min-width: 1200px) { .token-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
-.wallet-adapter-button-trigger { background: var(--primary) !important; color: var(--primary-foreground) !important; border-radius: 4px !important; height: 32px !important; font-size: 12px !important; font-weight: 600 !important; padding: 0 12px !important; }
+.wallet-adapter-button-trigger { background: var(--secondary) !important; color: var(--foreground) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; height: 36px !important; font-size: 12px !important; font-weight: 600 !important; padding: 0 12px !important; }
 @keyframes refill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 .refresh-bar { transform-origin: left; animation: refill 15s linear forwards; }
 @keyframes alert-blink { 50% { opacity: .45; } }

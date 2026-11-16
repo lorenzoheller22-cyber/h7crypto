@@ -70,7 +70,7 @@ export function Positions({ onChart }: { onChart: (c: { mint: string; symbol: st
 
   if (!publicKey) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-md border border-border bg-panel px-4 py-14 text-center">
+      <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-panel px-4 py-14 text-center">
         <p className="text-sm font-medium">Conecte a carteira para ver suas posições</p>
         <p className="max-w-sm text-xs text-muted-foreground">PnL em tempo real, compras rápidas, alertas de alvo e saídas parciais.</p>
         <WalletMultiButton />
@@ -79,7 +79,7 @@ export function Positions({ onChart }: { onChart: (c: { mint: string; symbol: st
   }
   if (mine.length === 0) {
     return (
-      <div className="rounded-md border border-border bg-panel px-4 py-14 text-center">
+      <div className="rounded-2xl border border-border bg-panel px-4 py-14 text-center">
         <p className="text-sm font-medium">Nenhuma moeda lançada nesta carteira</p>
         <p className="mt-1 text-xs text-muted-foreground">No Mercado, escolha um ativo e use "Copiar e lançar".</p>
       </div>
@@ -99,7 +99,7 @@ export function Positions({ onChart }: { onChart: (c: { mint: string; symbol: st
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-3 overflow-hidden rounded-md border border-border bg-panel">
+      <div className="grid grid-cols-3 overflow-hidden rounded-2xl border border-border bg-panel">
         {[["Investido", `${totalInv.toFixed(3)} SOL`, ""], ["Valor atual", `${totalVal.toFixed(3)} SOL`, ""],
           ["PnL", `${tot.diff >= 0 ? "+" : ""}${tot.diff.toFixed(3)} (${tot.pct.toFixed(1)}%)`, tot.diff >= 0 ? "text-positive" : "text-destructive"]].map(([l, v, cl], i) => (
           <div key={l} className={`p-3 ${i ? "border-l border-border" : ""}`}>
@@ -124,7 +124,7 @@ export function Positions({ onChart }: { onChart: (c: { mint: string; symbol: st
         const toggle = (k: "alerts" | "share") => setOpen(isOpen(k) ? null : { mint: p.mint, panel: k });
         const text = shillText(p);
         return (
-          <div key={p.mint} className={`overflow-hidden rounded-md border bg-panel ${hit === "tp" ? "border-positive" : hit === "sl" ? "border-destructive" : "border-border"}`}>
+          <div key={p.mint} className={`overflow-hidden rounded-2xl border bg-panel ${hit === "tp" ? "border-positive" : hit === "sl" ? "border-destructive" : "border-border"}`}>
             {hit && (
               <div className={`alert-blink flex items-center justify-between px-3 py-1.5 text-xs font-medium ${hit === "tp" ? "bg-positive/15 text-positive" : "bg-destructive/15 text-destructive"}`}>
                 <span>{hit === "tp" ? `Alvo de lucro atingido (+${a.tp}%)` : `Stop atingido (-${Math.abs(a.sl ?? 0)}%)`}</span>

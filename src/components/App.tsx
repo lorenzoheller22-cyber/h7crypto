@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Keypair, LAMPORTS_PER_SOL, VersionedTransaction } from "@solana/web3.js";
-import { BarChart3, Globe, LineChart, RefreshCw, Search, Send, X } from "lucide-react";
+import { ArrowUpRight, BarChart3, Copy, Globe, Layers, LineChart, RefreshCw, Search, Send, TrendingUp, X, Zap } from "lucide-react";
 import { Positions } from "./Positions";
 import { ChartPanel } from "./ChartPanel";
 import { savePosition } from "@/lib/positions";
@@ -65,122 +65,130 @@ export function App() {
     [data, filter, q],
   );
 
-  const tabBtn = (t: Tab, label: string) => (
-    <button
-      onClick={() => setTab(t)}
-      className={`h-10 border-b-2 px-3 text-xs font-medium transition-colors ${tab === t ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
-    >
-      {label}
-    </button>
-  );
-
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-30 border-b border-border bg-panel">
-        <div key={dataUpdatedAt} className="refresh-bar h-px bg-primary/70" />
-        <div className="mx-auto flex h-12 max-w-7xl items-center justify-between gap-3 px-3 sm:px-4">
+      <header className="sticky top-0 z-30 border-b border-border bg-background/90 px-4 py-3 backdrop-blur-xl">
+        <div key={dataUpdatedAt} className="refresh-bar absolute inset-x-0 top-0 h-px bg-primary/60" />
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <img src={h7Logo.url} alt="H7 CRYPTO" className="h-8 w-8 shrink-0 rounded object-cover" />
-            <span className="text-sm font-semibold tracking-wide">H7 CRYPTO</span>
-            <span className="hidden items-center gap-1.5 border-l border-border pl-3 text-[11px] text-muted-foreground sm:flex">
-              <span className="h-1.5 w-1.5 rounded-full bg-positive" /> Solana Mainnet
-            </span>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="hidden text-right md:block">
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">SOL/USD</div>
-              <div className="num text-xs">{solPrice ? solPrice.toFixed(2) : "—"}</div>
+            <div className="relative shrink-0">
+              <img src={h7Logo.url} alt="H7 CRYPTO" className="h-11 w-11 rounded-xl border border-border object-cover" />
+              <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background bg-positive" />
             </div>
-            <div className="hidden text-right sm:block">
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Saldo</div>
-              <div className="num text-xs">
-                {balance !== null ? `${balance.toFixed(3)} SOL` : "—"}
-                {balance !== null && solPrice ? <span className="text-muted-foreground"> · ${(balance * solPrice).toFixed(2)}</span> : null}
+            <div>
+              <div className="text-xs text-muted-foreground">Olá, <span className="font-semibold text-foreground">Lorenzo</span></div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-bold tracking-wider">H7 CRYPTO</span>
+                <span className="rounded-full border border-border px-1.5 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Pro</span>
               </div>
             </div>
-            <WalletMultiButton />
           </div>
-        </div>
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-1 sm:px-2">
-          <nav className="flex">{tabBtn("market", "Mercado")}{tabBtn("positions", "Minhas moedas")}</nav>
-          <div className="flex items-center gap-2 pr-3 text-[11px] text-muted-foreground sm:hidden">
-            <span className="num">{balance !== null ? `${balance.toFixed(3)} SOL` : ""}</span>
-          </div>
+          <WalletMultiButton />
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-7xl flex-1 px-3 py-4 sm:px-4">
+      <main className="mx-auto w-full max-w-6xl flex-1 space-y-4 px-4 py-4">
+        <section className="rounded-2xl border border-border bg-panel p-5">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="mb-1 flex items-center gap-2">
+                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Saldo disponível</span>
+                <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground">
+                  <span className="h-1.5 w-1.5 rounded-full bg-positive" /> Solana Mainnet
+                </span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="num text-3xl font-semibold tracking-tight md:text-4xl">{balance !== null ? `${balance.toFixed(3)} SOL` : "— SOL"}</span>
+                {balance !== null && solPrice ? <span className="num text-sm text-muted-foreground">≈ ${(balance * solPrice).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> : null}
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {publicKey ? `Carteira ${publicKey.toBase58().slice(0, 4)}…${publicKey.toBase58().slice(-4)}` : "Conecte sua Phantom para lançar e gerenciar tokens"}
+                {solPrice ? <span className="num"> · SOL ${solPrice.toFixed(2)}</span> : null}
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {([
+                { label: "Copiar meme", icon: Zap, on: () => setTab("market"), active: tab === "market" },
+                { label: "Minhas moedas", icon: Layers, on: () => setTab("positions"), active: tab === "positions" },
+              ] as const).map(({ label, icon: I, on, active }) => (
+                <button key={label} onClick={on}
+                  className={`flex h-10 items-center justify-center gap-1.5 rounded-xl border text-xs font-semibold transition-colors ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary/60 text-foreground hover:bg-secondary"}`}>
+                  <I className="h-3.5 w-3.5" /> {label}
+                </button>
+              ))}
+              <a href="https://dexscreener.com/solana" target="_blank" rel="noreferrer"
+                className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-border bg-secondary/60 text-xs font-semibold hover:bg-secondary">
+                <TrendingUp className="h-3.5 w-3.5" /> DexScreener <ArrowUpRight className="h-3 w-3 opacity-60" />
+              </a>
+              <button onClick={() => refetch()} disabled={isFetching}
+                className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-border bg-secondary/60 text-xs font-semibold hover:bg-secondary">
+                <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} /> Atualizar
+              </button>
+            </div>
+          </div>
+        </section>
+
         {tab === "positions" ? (
           <Positions onChart={setChart} />
         ) : (
-          <section className="overflow-hidden rounded-md border border-border bg-panel">
-            <div className="flex flex-col gap-2 border-b border-border p-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-1">
+          <section className="space-y-3">
+            <div className="flex flex-col items-stretch justify-between gap-2 sm:flex-row sm:items-center">
+              <div className="relative max-w-md flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar memecoin por nome ou ticker"
+                  className="h-10 w-full rounded-xl border border-border bg-panel pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none" />
+              </div>
+              <div className="flex items-center gap-1 rounded-xl border border-border bg-panel p-1 text-xs">
                 {(["all", "pump.fun", "dexscreener"] as Filter[]).map((f) => (
                   <button key={f} onClick={() => setFilter(f)}
-                    className={`h-7 rounded px-2.5 text-xs ${filter === f ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+                    className={`rounded-lg px-3 py-1.5 font-medium ${filter === f ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
                     {f === "all" ? "Todos" : f === "pump.fun" ? "Pump.fun" : "DexScreener"}
                   </button>
                 ))}
               </div>
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1 sm:w-64">
-                  <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                  <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar símbolo"
-                    className="h-7 w-full border border-border bg-background pl-7 pr-2 text-xs placeholder:text-muted-foreground focus:border-primary focus:outline-none" />
-                </div>
-                <button onClick={() => refetch()} aria-label="Atualizar" className="flex h-7 w-7 items-center justify-center rounded border border-border text-muted-foreground hover:text-foreground">
-                  <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
-                </button>
-              </div>
             </div>
 
-            <div className="hidden grid-cols-[minmax(0,2.2fr)_1fr_1fr_0.8fr_0.6fr_auto] gap-3 border-b border-border px-3 py-2 text-[10px] uppercase tracking-wider text-muted-foreground md:grid">
-              <span>Ativo</span><span className="text-right">Market cap</span><span className="text-right">Volume 24h</span><span className="text-right">Var. 24h</span><span className="text-right">Idade</span><span className="w-[148px]" />
-            </div>
-
-            <div className="divide-y divide-border">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
               {list.map((t) => (
-                <div key={`${t.source}-${t.mint}`} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-2.5 hover:bg-card md:grid-cols-[minmax(0,2.2fr)_1fr_1fr_0.8fr_0.6fr_auto]">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <img src={t.image || "/favicon.png"} alt="" className="h-7 w-7 shrink-0 rounded-full bg-secondary object-cover"
+                <div key={`${t.source}-${t.mint}`} className="flex flex-col justify-between gap-3 rounded-2xl border border-border bg-panel p-4 transition-colors hover:border-muted-foreground/40">
+                  <div className="flex items-start gap-3">
+                    <img src={t.image || "/favicon.png"} alt="" className="h-12 w-12 shrink-0 rounded-xl border border-border bg-secondary object-cover"
                       onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/favicon.png"; }} />
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold">{t.symbol}</span>
-                        <span className="text-[10px] text-muted-foreground">{t.source === "pump.fun" ? "PUMP" : "DEX"}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <h4 className="truncate text-sm font-semibold">{t.name}</h4>
+                        <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">{t.source === "pump.fun" ? "Pump.fun" : "DexScreener"}</span>
                       </div>
-                      <div className="truncate text-[11px] text-muted-foreground">{t.name}</div>
-                      <div className="num mt-0.5 text-[11px] text-muted-foreground md:hidden">
-                        {fmtUsd(t.marketCap)} · <span className={t.change >= 0 ? "text-positive" : "text-destructive"}>{t.change >= 0 ? "+" : ""}{t.change.toFixed(1)}%</span> · {ago(t.createdAt)}
+                      <div className="mt-0.5 flex items-center gap-2 text-xs">
+                        <span className="font-medium text-muted-foreground">${t.symbol}</span>
+                        <span className="text-muted-foreground">· {ago(t.createdAt)}</span>
+                        {t.change ? <span className={`num ${t.change >= 0 ? "text-positive" : "text-destructive"}`}>{t.change >= 0 ? "+" : ""}{t.change.toFixed(1)}%</span> : null}
+                      </div>
+                      <div className="num mt-1.5 flex items-center gap-3 text-xs">
+                        <span>{fmtUsd(t.marketCap)} MC</span>
+                        {t.volume24h ? <span className="text-muted-foreground">{fmtUsd(t.volume24h)} Vol</span> : null}
                       </div>
                     </div>
                   </div>
-                  <span className="num hidden text-right text-xs md:block">{fmtUsd(t.marketCap)}</span>
-                  <span className="num hidden text-right text-xs text-muted-foreground md:block">{t.volume24h ? fmtUsd(t.volume24h) : "—"}</span>
-                  <span className={`num hidden text-right text-xs md:block ${t.change >= 0 ? "text-positive" : "text-destructive"}`}>{t.change >= 0 ? "+" : ""}{t.change.toFixed(2)}%</span>
-                  <span className="num hidden text-right text-xs text-muted-foreground md:block">{ago(t.createdAt)}</span>
-                  <div className="flex items-center gap-1.5">
-                    <button onClick={() => setChart({ mint: t.mint, symbol: t.symbol })} aria-label="Ver gráfico"
-                      className="flex h-7 w-7 items-center justify-center rounded border border-border text-muted-foreground hover:text-foreground">
-                      <LineChart className="h-3.5 w-3.5" />
+                  <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
+                    <button onClick={() => setChart({ mint: t.mint, symbol: t.symbol })} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+                      <LineChart className="h-3.5 w-3.5" /> Ver gráfico
                     </button>
-                    <button onClick={() => setCopying(t)} className="h-7 rounded bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90">
-                      Copiar e lançar
+                    <button onClick={() => setCopying(t)} className="flex h-8 items-center gap-1 rounded-xl bg-primary px-3 text-xs font-semibold text-primary-foreground hover:bg-primary/90">
+                      <Copy className="h-3.5 w-3.5" /> Copiar e lançar
                     </button>
                   </div>
                 </div>
               ))}
-              {!list.length && (
-                <div className="flex flex-col items-center gap-2 py-16 text-xs text-muted-foreground">
-                  <BarChart3 className="h-5 w-5" /> {isFetching ? "Carregando mercado…" : "Nenhum ativo encontrado"}
-                </div>
-              )}
             </div>
+            {!list.length && (
+              <div className="flex flex-col items-center gap-2 py-16 text-xs text-muted-foreground">
+                <BarChart3 className="h-5 w-5" /> {isFetching ? "Carregando mercado…" : "Nenhum ativo encontrado"}
+              </div>
+            )}
           </section>
         )}
       </main>
-
       {copying && <LaunchModal token={copying} onClose={() => setCopying(null)} onSuccess={() => { setCopying(null); setTab("positions"); }} />}
       {chart && <ChartPanel {...chart} onClose={() => setChart(null)} />}
     </div>
@@ -247,7 +255,7 @@ function LaunchModal({ token, onClose, onSuccess }: { token: TrendingToken; onCl
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-background/80 sm:items-center sm:p-4">
-      <div className="w-full max-w-md rounded-t-md border border-border bg-panel sm:rounded-md">
+      <div className="w-full max-w-md rounded-t-2xl border border-border bg-panel sm:rounded-2xl">
         <div className="flex h-11 items-center justify-between border-b border-border px-4">
           <div className="flex items-center gap-2">
             {token.image && <img src={token.image} alt="" className="h-6 w-6 rounded-full object-cover" />}
@@ -302,7 +310,7 @@ function LaunchModal({ token, onClose, onSuccess }: { token: TrendingToken; onCl
           <div className="space-y-2 border-t border-border pt-3">
             {status && <p className="text-center text-xs text-muted-foreground">{status}…</p>}
             <button onClick={handleLaunch} disabled={busy}
-              className="h-10 w-full rounded bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+              className="h-11 w-full rounded-xl bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
               {busy ? "Processando" : <>Lançar com <span className="num">{devBuyNum}</span> SOL</>}
             </button>
           </div>
