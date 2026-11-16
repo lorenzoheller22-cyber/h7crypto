@@ -26,7 +26,6 @@ import {
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction, VersionedTransaction } from "@solana/web3.js";
 import { Positions } from "./Positions";
-import { TrustButton } from "./TrustButton";
 import { savePosition } from "@/lib/positions";
 import { buildCreateTx, getPlatformConfig, getTrending, uploadMetadata, type TrendingToken } from "@/lib/pump.functions";
 
@@ -109,7 +108,6 @@ export function App() {
 
           {/* Right Wallet Action */}
           <div className="flex items-center gap-2">
-            <TrustButton />
             <div className="[&_.wallet-adapter-button]:!h-9 [&_.wallet-adapter-button]:!px-3 [&_.wallet-adapter-button]:!text-xs [&_.wallet-adapter-button]:!font-semibold [&_.wallet-adapter-button]:!rounded-xl [&_.wallet-adapter-button]:!bg-violet-500/10 [&_.wallet-adapter-button]:!border [&_.wallet-adapter-button]:!border-violet-500/40 [&_.wallet-adapter-button]:hover:!bg-violet-500/20">
               <WalletMultiButton />
             </div>

@@ -1,15 +1,17 @@
 import { createFileRoute, ClientOnly } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
+import { requireUnlocked } from "@/lib/gate.functions";
 
 // Polyfills must finish before any Solana module evaluates (bundlers may hoist imports).
 const WalletShell = lazy(() => import("@/lib/polyfills").then(() => import("@/components/WalletShell")));
 
 export const Route = createFileRoute("/")({
+  beforeLoad: () => requireUnlocked(),
   head: () => ({
     meta: [
-      { title: "HELLER — Moedas em alta na Solana" },
+      { title: "H7 CRYPTO — Moedas em alta na Solana" },
       { name: "description", content: "Feed ao vivo de tokens trending da Solana e Pump.fun. Copie em 1 clique e faça deploy com dev buy." },
-      { property: "og:title", content: "HELLER — Moedas em alta na Solana" },
+      { property: "og:title", content: "H7 CRYPTO — Moedas em alta na Solana" },
       { property: "og:description", content: "Copie tokens em alta e lance na Pump.fun com dev buy e prioridade." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
