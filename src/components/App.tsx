@@ -1,3 +1,4 @@
+import h7Logo from "@/assets/h7_logo.png.asset.json";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
@@ -79,19 +80,15 @@ export function App() {
   const balanceUsd = balance !== null ? balance * solPrice : null;
 
   return (
-    <div className="min-h-screen bg-[#07090e] text-slate-100 flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="min-h-screen bg-[#0d0b1a] text-slate-100 flex flex-col font-sans selection:bg-violet-500/30 selection:text-violet-200">
       {/* Top Header Fintech / Street Aesthetic */}
-      <header className="sticky top-0 z-30 border-b border-cyan-950/40 bg-[#07090e]/90 backdrop-blur-xl px-4 py-3">
+      <header className="sticky top-0 z-30 border-b border-violet-950/40 bg-[#0d0b1a]/90 backdrop-blur-xl px-4 py-3">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
           {/* Logo H7 & User Badge */}
           <div className="flex items-center gap-3">
-            <div className="relative group flex items-center justify-center">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 via-blue-600/10 to-transparent border border-cyan-500/40 flex items-center justify-center shadow-[0_0_15px_rgba(6,182,212,0.25)]">
-                <span className="font-black italic tracking-tighter text-xl text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]">
-                  H<span className="text-cyan-400">7</span>
-                </span>
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#07090e]" />
+            <div className="relative flex shrink-0 items-center justify-center">
+              <img src={h7Logo.url} alt="H7 CRYPTO" className="w-11 h-11 shrink-0 rounded-xl object-cover border border-violet-500/40 shadow-[0_0_15px_rgba(139,92,246,0.35)]" />
+              <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#0d0b1a]" />
             </div>
 
             <div className="flex flex-col">
@@ -100,10 +97,10 @@ export function App() {
                 <span className="text-xs font-bold text-slate-200">Lorenzo</span>
               </div>
               <div className="flex items-center gap-1">
-                <span className="text-sm font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-cyan-400">
+                <span className="text-sm font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-violet-400">
                   H7 CRYPTO
                 </span>
-                <span className="text-[9px] px-1.5 py-0.2 font-semibold uppercase tracking-widest bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 rounded-full">
+                <span className="text-[9px] px-1.5 py-0.2 font-semibold uppercase tracking-widest bg-violet-500/10 border border-violet-500/30 text-violet-300 rounded-full">
                   PRO
                 </span>
               </div>
@@ -113,7 +110,7 @@ export function App() {
           {/* Right Wallet Action */}
           <div className="flex items-center gap-2">
             <TrustButton />
-            <div className="[&_.wallet-adapter-button]:!h-9 [&_.wallet-adapter-button]:!px-3 [&_.wallet-adapter-button]:!text-xs [&_.wallet-adapter-button]:!font-semibold [&_.wallet-adapter-button]:!rounded-xl [&_.wallet-adapter-button]:!bg-cyan-500/10 [&_.wallet-adapter-button]:!border [&_.wallet-adapter-button]:!border-cyan-500/40 [&_.wallet-adapter-button]:hover:!bg-cyan-500/20">
+            <div className="[&_.wallet-adapter-button]:!h-9 [&_.wallet-adapter-button]:!px-3 [&_.wallet-adapter-button]:!text-xs [&_.wallet-adapter-button]:!font-semibold [&_.wallet-adapter-button]:!rounded-xl [&_.wallet-adapter-button]:!bg-violet-500/10 [&_.wallet-adapter-button]:!border [&_.wallet-adapter-button]:!border-violet-500/40 [&_.wallet-adapter-button]:hover:!bg-violet-500/20">
               <WalletMultiButton />
             </div>
           </div>
@@ -123,9 +120,9 @@ export function App() {
       {/* Main Container */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-4 space-y-4">
         {/* Hero Card: Saldo & Status da Conta */}
-        <section className="relative overflow-hidden rounded-2xl border border-cyan-900/30 bg-gradient-to-br from-slate-900/80 via-[#0b101b]/90 to-[#07090e] p-5 shadow-2xl">
-          <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 rounded-full bg-blue-600/10 blur-3xl pointer-events-none" />
+        <section className="relative overflow-hidden rounded-2xl border border-violet-900/30 bg-gradient-to-br from-[#160f2e]/80 via-[#1e1338]/90 to-[#07090e] p-5 shadow-2xl">
+          <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 rounded-full bg-indigo-600/10 blur-3xl pointer-events-none" />
 
           <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -159,9 +156,9 @@ export function App() {
                 size="sm"
                 variant={tab === "trending" ? "default" : "outline"}
                 onClick={() => setTab("trending")}
-                className={`rounded-xl text-xs font-semibold h-10 ${tab === "trending" ? "bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold shadow-lg shadow-cyan-500/20" : "border-slate-800 bg-slate-900/60 text-slate-300 hover:bg-slate-800"}`}
+                className={`rounded-xl text-xs font-semibold h-10 ${tab === "trending" ? "bg-violet-500 hover:bg-violet-400 text-[#0b0818] font-bold shadow-lg shadow-violet-500/20" : "border-purple-900/40 bg-[#160f2e]/60 text-slate-300 hover:bg-purple-900/40"}`}
               >
-                <Zap className="w-3.5 h-3.5 mr-1.5 text-cyan-400" />
+                <Zap className="w-3.5 h-3.5 mr-1.5 text-violet-400" />
                 Copiar Meme
               </Button>
 
@@ -169,9 +166,9 @@ export function App() {
                 size="sm"
                 variant={tab === "coins" ? "default" : "outline"}
                 onClick={() => setTab("coins")}
-                className={`rounded-xl text-xs font-semibold h-10 ${tab === "coins" ? "bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold shadow-lg shadow-cyan-500/20" : "border-slate-800 bg-slate-900/60 text-slate-300 hover:bg-slate-800"}`}
+                className={`rounded-xl text-xs font-semibold h-10 ${tab === "coins" ? "bg-violet-500 hover:bg-violet-400 text-[#0b0818] font-bold shadow-lg shadow-violet-500/20" : "border-purple-900/40 bg-[#160f2e]/60 text-slate-300 hover:bg-purple-900/40"}`}
               >
-                <Layers className="w-3.5 h-3.5 mr-1.5 text-cyan-400" />
+                <Layers className="w-3.5 h-3.5 mr-1.5 text-violet-400" />
                 Minhas Moedas
               </Button>
 
@@ -179,10 +176,10 @@ export function App() {
                 asChild
                 size="sm"
                 variant="outline"
-                className="rounded-xl text-xs font-semibold h-10 border-slate-800 bg-slate-900/60 text-slate-300 hover:bg-slate-800"
+                className="rounded-xl text-xs font-semibold h-10 border-purple-900/40 bg-[#160f2e]/60 text-slate-300 hover:bg-purple-900/40"
               >
                 <a href="https://dexscreener.com/solana" target="_blank" rel="noreferrer">
-                  <TrendingUp className="w-3.5 h-3.5 mr-1.5 text-cyan-400" />
+                  <TrendingUp className="w-3.5 h-3.5 mr-1.5 text-violet-400" />
                   DexScreener
                   <ArrowUpRight className="w-3 h-3 ml-1 opacity-60" />
                 </a>
@@ -193,9 +190,9 @@ export function App() {
                 variant="outline"
                 onClick={() => refetch()}
                 disabled={isFetching}
-                className="rounded-xl text-xs font-semibold h-10 border-slate-800 bg-slate-900/60 text-slate-300 hover:bg-slate-800"
+                className="rounded-xl text-xs font-semibold h-10 border-purple-900/40 bg-[#160f2e]/60 text-slate-300 hover:bg-purple-900/40"
               >
-                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 text-cyan-400 ${isFetching ? "animate-spin" : ""}`} />
+                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 text-violet-400 ${isFetching ? "animate-spin" : ""}`} />
                 Atualizar
               </Button>
             </div>
@@ -215,16 +212,16 @@ export function App() {
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="Buscar memecoin em alta por nome ou ticker..."
-                  className="w-full h-10 pl-9 pr-3 rounded-xl bg-slate-900/80 border border-slate-800 text-sm placeholder:text-slate-500 focus:outline-none focus:border-cyan-500/50"
+                  className="w-full h-10 pl-9 pr-3 rounded-xl bg-[#160f2e]/80 border border-purple-900/40 text-sm placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50"
                 />
               </div>
 
-              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900/80 border border-slate-800 text-xs">
+              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#160f2e]/80 border border-purple-900/40 text-xs">
                 {(["all", "pump.fun", "dexscreener"] as Filter[]).map((f) => (
                   <button
                     key={f}
                     onClick={() => setFilter(f)}
-                    className={`px-3 py-1.5 rounded-lg capitalize font-medium transition-all ${filter === f ? "bg-cyan-500 text-slate-950 font-bold" : "text-slate-400 hover:text-white"}`}
+                    className={`px-3 py-1.5 rounded-lg capitalize font-medium transition-all ${filter === f ? "bg-violet-500 text-[#0b0818] font-bold" : "text-slate-400 hover:text-white"}`}
                   >
                     {f === "all" ? "Todos" : f}
                   </button>
@@ -237,24 +234,24 @@ export function App() {
               {list.map((t) => (
                 <div
                   key={`${t.source}-${t.mint}`}
-                  className="group relative rounded-2xl border border-slate-800/80 bg-slate-900/50 hover:bg-slate-900/90 hover:border-cyan-500/40 p-4 transition-all duration-200 flex flex-col justify-between gap-3 shadow-lg hover:shadow-cyan-500/5"
+                  className="group relative rounded-2xl border border-purple-900/40/80 bg-[#160f2e]/50 hover:bg-[#160f2e]/90 hover:border-violet-500/40 p-4 transition-all duration-200 flex flex-col justify-between gap-3 shadow-lg hover:shadow-violet-500/5"
                 >
                   <div className="flex items-start gap-3">
                     <img
                       src={t.image || "/favicon.ico"}
                       alt={t.name}
-                      className="w-12 h-12 rounded-xl object-cover border border-slate-800 bg-slate-950 shrink-0 group-hover:scale-105 transition-transform"
+                      className="w-12 h-12 rounded-xl object-cover border border-purple-900/40 bg-[#0b0818] shrink-0 group-hover:scale-105 transition-transform"
                       onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/favicon.ico"; }}
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-1">
                         <h4 className="font-bold text-white text-sm truncate">{t.name}</h4>
-                        <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
+                        <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-purple-900/40 text-slate-400">
                           {t.source}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs font-semibold text-cyan-400">${t.symbol}</span>
+                        <span className="text-xs font-semibold text-violet-400">${t.symbol}</span>
                         <span className="text-[11px] text-slate-500">• {ago(t.createdAt ?? Date.now())}</span>
                       </div>
                       <div className="flex items-center gap-3 mt-1.5 text-xs">
@@ -264,12 +261,12 @@ export function App() {
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between gap-2">
+                  <div className="pt-2 border-t border-purple-900/40/60 flex items-center justify-between gap-2">
                     <a
                       href={t.source === "pump.fun" ? `https://pump.fun/${t.mint}` : `https://dexscreener.com/solana/${t.mint}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-xs text-slate-400 hover:text-cyan-400 flex items-center gap-1 transition-colors"
+                      className="text-xs text-slate-400 hover:text-violet-400 flex items-center gap-1 transition-colors"
                     >
                       Ver Gráfico <ExternalLink className="w-3 h-3" />
                     </a>
@@ -277,7 +274,7 @@ export function App() {
                     <Button
                       size="sm"
                       onClick={() => setCopying(t)}
-                      className="rounded-xl h-8 px-3 text-xs bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold shadow-md shadow-cyan-500/20"
+                      className="rounded-xl h-8 px-3 text-xs bg-violet-500 hover:bg-violet-400 text-[#0b0818] font-bold shadow-md shadow-violet-500/20"
                     >
                       <Copy className="w-3.5 h-3.5 mr-1" />
                       COPIAR & LANÇAR
@@ -411,10 +408,10 @@ function LaunchModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-lg rounded-3xl border border-cyan-500/40 bg-[#0a0f1d] p-6 shadow-2xl space-y-4 my-8">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+      <div className="relative w-full max-w-lg rounded-3xl border border-violet-500/40 bg-[#0a0f1d] p-6 shadow-2xl space-y-4 my-8">
+        <div className="flex items-center justify-between border-b border-purple-900/40 pb-3">
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+            <div className="p-2 rounded-xl bg-violet-500/10 border border-violet-500/30 text-violet-400">
               <Zap className="w-5 h-5" />
             </div>
             <div>
@@ -422,16 +419,16 @@ function LaunchModal({
               <p className="text-xs text-slate-400">Pump.fun Bonding Curve Direta</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">
+          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-purple-900/40">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Radar de Atratividade / Sniper Score */}
-        <div className="rounded-2xl border border-cyan-500/20 bg-slate-900/80 p-4 space-y-2">
+        <div className="rounded-2xl border border-violet-500/20 bg-[#160f2e]/80 p-4 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-cyan-400" />
+              <Sparkles className="w-4 h-4 text-violet-400" />
               Radar de Snipers & Atratividade
             </span>
             <span className={`text-sm font-extrabold px-2 py-0.5 rounded-full ${score >= 80 ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : score >= 50 ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>
@@ -439,9 +436,9 @@ function LaunchModal({
             </span>
           </div>
 
-          <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
+          <div className="w-full bg-[#0b0818] h-2 rounded-full overflow-hidden border border-purple-900/40">
             <div
-              className={`h-full transition-all duration-300 ${score >= 80 ? "bg-gradient-to-r from-emerald-500 to-cyan-400" : score >= 50 ? "bg-amber-400" : "bg-red-500"}`}
+              className={`h-full transition-all duration-300 ${score >= 80 ? "bg-gradient-to-r from-emerald-500 to-violet-400" : score >= 50 ? "bg-amber-400" : "bg-red-500"}`}
               style={{ width: `${score}%` }}
             />
           </div>
@@ -457,7 +454,7 @@ function LaunchModal({
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full h-10 px-3 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-cyan-500"
+              className="w-full h-10 px-3 rounded-xl bg-[#0b0818] border border-purple-900/40 text-sm text-white focus:outline-none focus:border-violet-500"
             />
           </div>
           <div>
@@ -465,7 +462,7 @@ function LaunchModal({
             <input
               value={symbol}
               onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-              className="w-full h-10 px-3 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-cyan-500"
+              className="w-full h-10 px-3 rounded-xl bg-[#0b0818] border border-purple-900/40 text-sm text-white focus:outline-none focus:border-violet-500"
             />
           </div>
         </div>
@@ -474,7 +471,7 @@ function LaunchModal({
         <div>
           <div className="flex items-center justify-between mb-1">
             <label className="text-xs font-semibold text-slate-300">Sua Compra Inicial (Dev Buy)</label>
-            <span className="text-[11px] text-cyan-400 font-semibold">Recomendado: 0.2 SOL</span>
+            <span className="text-[11px] text-violet-400 font-semibold">Recomendado: 0.2 SOL</span>
           </div>
           <div className="grid grid-cols-4 gap-2 mb-2">
             {["0.1", "0.2", "0.5", "1.0"].map((v) => (
@@ -482,7 +479,7 @@ function LaunchModal({
                 key={v}
                 type="button"
                 onClick={() => setDevBuy(v)}
-                className={`py-1.5 rounded-lg text-xs font-bold border transition-all ${devBuy === v ? "bg-cyan-500 text-slate-950 border-cyan-400" : "bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700"}`}
+                className={`py-1.5 rounded-lg text-xs font-bold border transition-all ${devBuy === v ? "bg-violet-500 text-[#0b0818] border-violet-400" : "bg-[#0b0818] border-purple-900/40 text-slate-300 hover:border-slate-700"}`}
               >
                 {v} SOL
               </button>
@@ -493,12 +490,12 @@ function LaunchModal({
             step="0.05"
             value={devBuy}
             onChange={(e) => setDevBuy(e.target.value)}
-            className="w-full h-10 px-3 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-cyan-500"
+            className="w-full h-10 px-3 rounded-xl bg-[#0b0818] border border-purple-900/40 text-sm text-white focus:outline-none focus:border-violet-500"
           />
         </div>
 
         {/* Tríplice Coroa de Redes Sociais */}
-        <div className="space-y-2 pt-1 border-t border-slate-800">
+        <div className="space-y-2 pt-1 border-t border-purple-900/40">
           <span className="text-xs font-bold text-slate-300 block">Metadados de Confiança (Tríplice Coroa)</span>
           <div className="space-y-1.5 text-xs">
             <div className="relative">
@@ -507,7 +504,7 @@ function LaunchModal({
                 value={twitter}
                 onChange={(e) => setTwitter(e.target.value)}
                 placeholder="https://x.com/seu_token"
-                className="w-full h-9 pl-8 pr-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:border-cyan-500 text-xs"
+                className="w-full h-9 pl-8 pr-3 rounded-xl bg-[#0b0818] border border-purple-900/40 text-white focus:border-violet-500 text-xs"
               />
             </div>
             <div className="relative">
@@ -516,7 +513,7 @@ function LaunchModal({
                 value={telegram}
                 onChange={(e) => setTelegram(e.target.value)}
                 placeholder="https://t.me/seu_canal"
-                className="w-full h-9 pl-8 pr-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:border-cyan-500 text-xs"
+                className="w-full h-9 pl-8 pr-3 rounded-xl bg-[#0b0818] border border-purple-900/40 text-white focus:border-violet-500 text-xs"
               />
             </div>
             <div className="relative">
@@ -525,35 +522,35 @@ function LaunchModal({
                 value={website}
                 onChange={(e) => setWebsite(e.target.value)}
                 placeholder="https://seusite.com"
-                className="w-full h-9 pl-8 pr-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:border-cyan-500 text-xs"
+                className="w-full h-9 pl-8 pr-3 rounded-xl bg-[#0b0818] border border-purple-900/40 text-white focus:border-violet-500 text-xs"
               />
             </div>
           </div>
         </div>
 
         {/* Selos de Segurança Automáticos */}
-        <div className="grid grid-cols-3 gap-2 py-2 border-t border-slate-800 text-center">
-          <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">
+        <div className="grid grid-cols-3 gap-2 py-2 border-t border-purple-900/40 text-center">
+          <div className="p-2 rounded-xl bg-[#0b0818] border border-purple-900/40">
             <span className="text-[10px] text-slate-400 block font-medium">Mint Authority</span>
             <span className="text-xs font-bold text-emerald-400">🛡️ Revogado</span>
           </div>
-          <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">
+          <div className="p-2 rounded-xl bg-[#0b0818] border border-purple-900/40">
             <span className="text-[10px] text-slate-400 block font-medium">Freeze Authority</span>
             <span className="text-xs font-bold text-emerald-400">❄️ Revogado</span>
           </div>
-          <div className="p-2 rounded-xl bg-slate-950 border border-slate-800">
+          <div className="p-2 rounded-xl bg-[#0b0818] border border-purple-900/40">
             <span className="text-[10px] text-slate-400 block font-medium">Metadata</span>
-            <span className="text-xs font-bold text-cyan-400">🔒 Travado</span>
+            <span className="text-xs font-bold text-violet-400">🔒 Travado</span>
           </div>
         </div>
 
         {/* Botão de Disparo */}
         <div className="space-y-2 pt-2">
-          {status && <p className="text-xs text-center font-medium text-cyan-400 animate-pulse">{status}</p>}
+          {status && <p className="text-xs text-center font-medium text-violet-400 animate-pulse">{status}</p>}
           <Button
             onClick={handleLaunch}
             disabled={busy}
-            className="w-full h-12 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-500 to-cyan-400 hover:opacity-90 text-slate-950 font-black text-sm tracking-wider uppercase shadow-xl shadow-cyan-500/25"
+            className="w-full h-12 rounded-2xl bg-gradient-to-r from-violet-500 via-indigo-500 to-violet-400 hover:opacity-90 text-[#0b0818] font-black text-sm tracking-wider uppercase shadow-xl shadow-violet-500/25"
           >
             {busy ? "PROCESSANDO LANÇAMENTO..." : `LANÇAR NA PUMP.FUN COM ${devBuyNum} SOL`}
           </Button>
