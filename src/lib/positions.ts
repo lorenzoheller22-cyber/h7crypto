@@ -1,4 +1,4 @@
-export type Position = { mint: string; name: string; symbol: string; image: string | null; investedSol: number; createdAt: number; owner: string; sig: string };
+export type Position = { mint: string; name: string; symbol: string; image: string | null; investedSol: number; costBasisKnown?: boolean; createdAt: number; owner: string; sig: string };
 
 const KEY = "copytrend.positions";
 

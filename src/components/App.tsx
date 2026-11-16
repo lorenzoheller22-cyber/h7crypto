@@ -1,4 +1,3 @@
-import h7Logo from "@/assets/h7_logo.png.asset.json";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
@@ -71,10 +70,6 @@ export function App() {
         <div key={dataUpdatedAt} className="refresh-bar absolute inset-x-0 top-0 h-px bg-primary/60" />
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="relative shrink-0">
-              <img src={h7Logo.url} alt="H7 CRYPTO" className="h-11 w-11 rounded-xl border border-border object-cover" />
-              <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background bg-positive" />
-            </div>
             <div>
               <div className="text-xs text-muted-foreground">Olá, <span className="font-semibold text-foreground">Lorenzo</span></div>
               <div className="flex items-center gap-1.5">

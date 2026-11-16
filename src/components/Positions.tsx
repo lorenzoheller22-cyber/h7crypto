@@ -6,6 +6,7 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { buildBuyTx, buildSellTx, getCoinsInfo } from "@/lib/pump.functions";
 import { alertState, loadAlerts, loadPositions, pnl, removePosition, saveAlerts, shillText, type Alerts, type Position } from "@/lib/positions";
 import { Bell, Copy, ExternalLink, LineChart, RefreshCw, Share2, Trash2 } from "lucide-react";
+import { ImportPosition } from "./ImportPosition";
 
 const BUMPS = [0.005, 0.01, 0.02];
 
@@ -62,10 +63,16 @@ export function Positions({ onChart }: { onChart: (c: { mint: string; symbol: st
       setMsg(`Falha: ${e?.message || e}`);
     } finally { setBusy(null); }
   };
-  const sell = (mint: string, percent: number) => send(`${mint}-s${percent}`, `Venda ${percent}%`, () =>
-    buildSellTx({ data: { publicKey: publicKey!.toBase58(), mint, percent, priorityFee: 0.005, slippage: 15 } }));
-  const buy = (mint: string, sol: number) => send(`${mint}-b${sol}`, `Compra ${sol} SOL`, () =>
-    buildBuyTx({ data: { publicKey: publicKey!.toBase58(), mint, solAmount: sol, priorityFee: 0.0005, slippage: 15 } }));
+  const sell = (mint: string, percent: number) => {
+    if (!publicKey) return;
+    const owner = publicKey.toBase58();
+    return send(`${mint}-s${percent}`, `Venda ${percent}%`, () => buildSellTx({ data: { publicKey: owner, mint, percent, priorityFee: 0.005, slippage: 15 } }));
+  };
+  const buy = (mint: string, sol: number) => {
+    if (!publicKey) return;
+    const owner = publicKey.toBase58();
+    return send(`${mint}-b${sol}`, `Compra ${sol} SOL`, () => buildBuyTx({ data: { publicKey: owner, mint, solAmount: sol, priorityFee: 0.0005, slippage: 15 } }));
+  };
 
   const bump = async (mint: string, sol: number) => {
     if (burst <= 1) return buy(mint, sol);
@@ -101,9 +108,11 @@ export function Positions({ onChart }: { onChart: (c: { mint: string; symbol: st
   }
   if (mine.length === 0) {
     return (
+      <div className="space-y-3">
+      <ImportPosition />
       <div className="rounded-2xl border border-border bg-panel px-4 py-14 text-center">
-        <p className="text-sm font-medium">Nenhuma moeda lançada nesta carteira</p>
-        <p className="mt-1 text-xs text-muted-foreground">No Mercado, escolha um ativo e use "Copiar e lançar".</p>
+        <p className="text-sm font-medium">Nenhuma moeda nesta carteira</p>
+      </div>
       </div>
     );
   }
@@ -113,17 +122,19 @@ export function Positions({ onChart }: { onChart: (c: { mint: string; symbol: st
     const tokens = bal.data?.[p.mint] ?? 0;
     const value = c ? tokens * c.priceSol : 0;
     const { diff, pct } = pnl(value, p.investedSol);
-    return { p, c, tokens, value, diff, pct, hit: c ? alertState(pct, alerts[p.mint]) : null };
+    return { p, c, tokens, value, diff, pct, hit: c && p.costBasisKnown !== false ? alertState(pct, alerts[p.mint]) : null };
   });
   const totalInv = rows.reduce((s, r) => s + r.p.investedSol, 0);
   const totalVal = rows.reduce((s, r) => s + r.value, 0);
   const tot = pnl(totalVal, totalInv);
+  const totalKnown = rows.every((r) => r.p.costBasisKnown !== false && !!r.c);
 
   return (
     <div className="space-y-3">
+      <ImportPosition />
       <div className="grid grid-cols-3 overflow-hidden rounded-2xl border border-border bg-panel">
-        {[["Investido", `${totalInv.toFixed(3)} SOL`, ""], ["Valor atual", `${totalVal.toFixed(3)} SOL`, ""],
-          ["PnL", `${tot.diff >= 0 ? "+" : ""}${tot.diff.toFixed(3)} (${tot.pct.toFixed(1)}%)`, tot.diff >= 0 ? "text-positive" : "text-destructive"]].map(([l, v, cl], i) => (
+        {[["Investido", totalKnown ? `${totalInv.toFixed(3)} SOL` : "—", ""], ["Valor atual", `${totalVal.toFixed(3)} SOL`, ""],
+          ["PnL", totalKnown ? `${tot.diff >= 0 ? "+" : ""}${tot.diff.toFixed(3)} (${tot.pct.toFixed(1)}%)` : "—", !totalKnown ? "text-muted-foreground" : tot.diff >= 0 ? "text-positive" : "text-destructive"]].map(([l, v, cl], i) => (
           <div key={l} className={`p-3 ${i ? "border-l border-border" : ""}`}>
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{l}</div>
             <div className={`num mt-1 text-xs sm:text-sm ${cl}`}>{v}</div>
@@ -163,15 +174,17 @@ export function Positions({ onChart }: { onChart: (c: { mint: string; symbol: st
                 </div>
               </div>
               <div className="text-right">
-                <div className={`num text-sm ${up ? "text-positive" : "text-destructive"}`}>{up ? "+" : ""}{diff.toFixed(4)} SOL</div>
-                <div className={`num text-[11px] ${up ? "text-positive" : "text-destructive"}`}>{up ? "+" : ""}{pct.toFixed(2)}%</div>
+                {p.costBasisKnown !== false && c ? <>
+                  <div className={`num text-sm ${up ? "text-positive" : "text-destructive"}`}>{up ? "+" : ""}{diff.toFixed(4)} SOL</div>
+                  <div className={`num text-[11px] ${up ? "text-positive" : "text-destructive"}`}>{up ? "+" : ""}{pct.toFixed(2)}%</div>
+                </> : <span className="text-xs text-muted-foreground">PnL —</span>}
               </div>
             </div>
 
             <div className="px-3 pb-3">
               <div className="mb-1 flex justify-between text-[10px] text-muted-foreground"><span>Curva de bonding</span><span className="num">{progress.toFixed(1)}%</span></div>
               <div className="h-1 overflow-hidden rounded-full bg-secondary"><div className="h-full bg-primary" style={{ width: `${Math.min(100, progress)}%` }} /></div>
-              <div className="num mt-1.5 text-[11px] text-muted-foreground">Posição: {tokens.toLocaleString("en-US", { maximumFractionDigits: 0 })} · Investido {p.investedSol} SOL</div>
+              <div className="num mt-1.5 text-[11px] text-muted-foreground">Posição: {tokens.toLocaleString("en-US", { maximumFractionDigits: 0 })} · Investido {p.costBasisKnown === false ? "—" : `${p.investedSol} SOL`}</div>
             </div>
 
             <div className="grid grid-cols-1 gap-px border-t border-border bg-border sm:grid-cols-2">
