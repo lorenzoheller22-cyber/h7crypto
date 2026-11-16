@@ -255,7 +255,7 @@ export function App() {
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-xs font-semibold text-cyan-400">${t.symbol}</span>
-                        <span className="text-[11px] text-slate-500">• {ago(t.createdTimestamp)}</span>
+                        <span className="text-[11px] text-slate-500">• {ago(t.createdAt ?? Date.now())}</span>
                       </div>
                       <div className="flex items-center gap-3 mt-1.5 text-xs">
                         <span className="text-slate-300 font-semibold">{fmtUsd(t.marketCap)} MC</span>
@@ -351,12 +351,12 @@ function LaunchModal({
       const mintKeypair = Keypair.generate();
 
       setStatus("Subindo imagem e metadados...");
-      const { metadataUri } = await uploadMetadata({
+      const { uri: metadataUri } = await uploadMetadata({
         data: {
           name,
           symbol,
           description: desc,
-          imageUrl: token.image,
+          imageUrl: token.image ?? undefined,
           twitter: twitter.trim() || undefined,
           telegram: telegram.trim() || undefined,
           website: website.trim() || undefined,
@@ -372,8 +372,8 @@ function LaunchModal({
           symbol,
           uri: metadataUri,
           devBuySol: devBuyNum,
-          priorityFee: cfg.priorityFee,
-          slippage: cfg.slippage,
+          priorityFee: 0.0005,
+          slippage: 15,
         },
       });
 
@@ -397,7 +397,7 @@ function LaunchModal({
         image: token.image,
         investedSol: devBuyNum,
         createdAt: Date.now(),
-        txSignature: sig,
+        sig,
       });
 
       setStatus("Lançamento concluído com sucesso!");
