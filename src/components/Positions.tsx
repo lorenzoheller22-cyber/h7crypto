@@ -11,7 +11,8 @@ const BUMPS = [0.005, 0.01, 0.02];
 
 export function Positions({ onChart }: { onChart: (c: { mint: string; symbol: string }) => void }) {
   const { connection } = useConnection();
-  const { publicKey, signTransaction } = useWallet();
+  const { publicKey, signTransaction, signAllTransactions } = useWallet();
+  const [burst, setBurst] = useState(1);
   const [all, setAll] = useState<Position[]>([]);
   const [alerts, setAlerts] = useState<Record<string, Alerts>>({});
   const [busy, setBusy] = useState<string | null>(null);
@@ -65,6 +66,27 @@ export function Positions({ onChart }: { onChart: (c: { mint: string; symbol: st
     buildSellTx({ data: { publicKey: publicKey!.toBase58(), mint, percent, priorityFee: 0.005, slippage: 15 } }));
   const buy = (mint: string, sol: number) => send(`${mint}-b${sol}`, `Compra ${sol} SOL`, () =>
     buildBuyTx({ data: { publicKey: publicKey!.toBase58(), mint, solAmount: sol, priorityFee: 0.0005, slippage: 15 } }));
+
+  const bump = async (mint: string, sol: number) => {
+    if (burst <= 1) return buy(mint, sol);
+    if (!publicKey || !signTransaction) { alert("Conecte sua carteira primeiro."); return; }
+    setBusy(`${mint}-b${sol}`); setMsg(`Preparando ${burst} bumps…`);
+    let ok = 0;
+    try {
+      const txs: VersionedTransaction[] = [];
+      for (let i = 0; i < burst; i++) {
+        const { tx: b64 } = await buildBuyTx({ data: { publicKey: publicKey.toBase58(), mint, solAmount: sol, priorityFee: 0.0005, slippage: 15 } });
+        txs.push(VersionedTransaction.deserialize(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))));
+      }
+      const signed = signAllTransactions ? await signAllTransactions(txs) : await Promise.all(txs.map((t) => signTransaction(t)));
+      for (const t of signed) {
+        try { await connection.sendRawTransaction(t.serialize(), { skipPreflight: false }); ok++; setMsg(`Bump ${ok}/${burst} enviado`); } catch {}
+        await new Promise((r) => setTimeout(r, 1200));
+      }
+      setMsg(`Rajada concluída · ${ok}/${burst} bumps de ${sol} SOL`);
+      setTimeout(refresh, 2500);
+    } catch (e: any) { setMsg(`Falha: ${e?.message || e}`); } finally { setBusy(null); }
+  };
 
   const setAlert = (mint: string, a: Alerts) => { saveAlerts(mint, a); setAlerts(loadAlerts()); };
 
@@ -154,10 +176,13 @@ export function Positions({ onChart }: { onChart: (c: { mint: string; symbol: st
 
             <div className="grid grid-cols-1 gap-px border-t border-border bg-border sm:grid-cols-2">
               <div className="bg-panel p-3">
-                <div className="mb-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">Comprar</div>
+                <div className="mb-1.5 flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground"><span>Bump (SOL)</span>
+                  <span className="flex gap-1">{[1, 3, 5].map((n) => (
+                    <button key={n} onClick={() => setBurst(n)} className={`num rounded px-1.5 ${burst === n ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{n}x</button>
+                  ))}</span></div>
                 <div className="flex gap-1.5">
                   {BUMPS.map((s) => (
-                    <button key={s} onClick={() => buy(p.mint, s)} disabled={!!busy}
+                    <button key={s} onClick={() => bump(p.mint, s)} disabled={!!busy}
                       className="num h-8 flex-1 rounded bg-positive/15 text-xs text-positive hover:bg-positive/25 disabled:opacity-40">
                       {busy === `${p.mint}-b${s}` ? "…" : `${s}`}
                     </button>
