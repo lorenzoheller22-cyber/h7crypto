@@ -186,7 +186,7 @@ export const buildCreateTx = createServerFn({ method: "POST" })
 export const getCoinsInfo = createServerFn({ method: "POST" })
   .inputValidator((d: { mints: string[] }) => ({ mints: d.mints.slice(0, 50) }))
   .handler(async ({ data }) => {
-    const out: Record<string, { name: string; symbol: string; image: string | null; priceSol: number; marketCap: number; progress: number; complete: boolean }> = {};
+    const out: Record<string, { name: string; symbol: string; image: string | null; priceSol: number; marketCap: number; progress: number; complete: boolean; lastTradeMs: number }> = {};
     await Promise.all(
       data.mints.map(async (m) => {
         try {
@@ -202,6 +202,7 @@ export const getCoinsInfo = createServerFn({ method: "POST" })
             marketCap: Number(c.usd_market_cap ?? 0),
             progress: c.complete ? 100 : Math.max(0, Math.min(100, 100 - (real / 793100000e6) * 100)),
             complete: !!c.complete,
+            lastTradeMs: Number(c.last_trade_timestamp ?? c.created_timestamp ?? 0),
           };
         } catch { /* ignore */ }
       }),

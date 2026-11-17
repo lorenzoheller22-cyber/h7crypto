@@ -7,6 +7,8 @@ import { buildBuyTx, buildSellTx, getCoinsInfo } from "@/lib/pump.functions";
 import { alertState, loadAlerts, loadPositions, pnl, removePosition, saveAlerts, shillText, type Alerts, type Position } from "@/lib/positions";
 import { Bell, Copy, ExternalLink, LineChart, RefreshCw, Share2, Trash2 } from "lucide-react";
 import { ImportPosition } from "./ImportPosition";
+import { AutoBump } from "./AutoBump";
+import { Zap } from "lucide-react";
 
 const BUMPS = [0.005, 0.01, 0.02];
 
@@ -17,7 +19,7 @@ export function Positions({ onChart }: { onChart: (c: { mint: string; symbol: st
   const [all, setAll] = useState<Position[]>([]);
   const [alerts, setAlerts] = useState<Record<string, Alerts>>({});
   const [busy, setBusy] = useState<string | null>(null);
-  const [open, setOpen] = useState<{ mint: string; panel: "alerts" | "share" } | null>(null);
+  const [open, setOpen] = useState<{ mint: string; panel: "alerts" | "share" | "auto" } | null>(null);
   const [msg, setMsg] = useState<string>("");
 
   useEffect(() => {
@@ -153,8 +155,8 @@ export function Positions({ onChart }: { onChart: (c: { mint: string; symbol: st
         const up = diff >= 0;
         const progress = c?.progress ?? 0;
         const a = alerts[p.mint] ?? {};
-        const isOpen = (k: "alerts" | "share") => open?.mint === p.mint && open.panel === k;
-        const toggle = (k: "alerts" | "share") => setOpen(isOpen(k) ? null : { mint: p.mint, panel: k });
+        const isOpen = (k: "alerts" | "share" | "auto") => open?.mint === p.mint && open.panel === k;
+        const toggle = (k: "alerts" | "share" | "auto") => setOpen(isOpen(k) ? null : { mint: p.mint, panel: k });
         const text = shillText(p);
         return (
           <div key={p.mint} className={`overflow-hidden rounded-2xl border bg-panel ${hit === "tp" ? "border-positive" : hit === "sl" ? "border-destructive" : "border-border"}`}>
@@ -219,6 +221,7 @@ export function Positions({ onChart }: { onChart: (c: { mint: string; symbol: st
               {[
                 { icon: LineChart, label: "Gráfico", on: () => onChart({ mint: p.mint, symbol: p.symbol }), active: false },
                 { icon: Bell, label: "Alertas", on: () => toggle("alerts"), active: isOpen("alerts") || !!(a.tp || a.sl) },
+                { icon: Zap, label: "Bump contínuo", on: () => toggle("auto"), active: isOpen("auto") },
                 { icon: Share2, label: "Divulgar", on: () => toggle("share"), active: isOpen("share") },
               ].map(({ icon: I, label, on, active }) => (
                 <button key={label} onClick={on} className={`flex h-7 items-center gap-1.5 rounded px-2 text-xs hover:bg-secondary ${active ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
@@ -228,6 +231,8 @@ export function Positions({ onChart }: { onChart: (c: { mint: string; symbol: st
               <a href={`https://pump.fun/${p.mint}`} target="_blank" rel="noreferrer" className="ml-auto flex h-7 items-center gap-1 rounded px-2 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground">Pump.fun <ExternalLink className="h-3 w-3" /></a>
               <button onClick={() => confirm("Remover esta moeda do painel?") && removePosition(p.mint)} aria-label="Remover" className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-secondary hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></button>
             </div>
+
+            {isOpen("auto") && <AutoBump mint={p.mint} />}
 
             {isOpen("alerts") && (
               <div className="grid grid-cols-2 gap-3 border-t border-border bg-background p-3">
