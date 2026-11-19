@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TerminalRouteImport } from './routes/terminal'
+import { Route as UnlockRouteImport } from './routes/unlock'
 import { Route as ApiPublicImgIdRouteImport } from './routes/api/public/img.$id'
 import { Route as ApiPublicMMintRouteImport } from './routes/api/public/m.$mint'
 import { Route as ApiPublicMetaIdRouteImport } from './routes/api/public/meta.$id'
@@ -17,6 +19,16 @@ import { Route as ApiPublicMetaIdRouteImport } from './routes/api/public/meta.$i
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TerminalRoute = TerminalRouteImport.update({
+  id: '/terminal',
+  path: '/terminal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UnlockRoute = UnlockRouteImport.update({
+  id: '/unlock',
+  path: '/unlock',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicImgIdRoute = ApiPublicImgIdRouteImport.update({
@@ -37,12 +49,16 @@ const ApiPublicMetaIdRoute = ApiPublicMetaIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/terminal': typeof TerminalRoute
+  '/unlock': typeof UnlockRoute
   '/api/public/img/$id': typeof ApiPublicImgIdRoute
   '/api/public/m/$mint': typeof ApiPublicMMintRoute
   '/api/public/meta/$id': typeof ApiPublicMetaIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/terminal': typeof TerminalRoute
+  '/unlock': typeof UnlockRoute
   '/api/public/img/$id': typeof ApiPublicImgIdRoute
   '/api/public/m/$mint': typeof ApiPublicMMintRoute
   '/api/public/meta/$id': typeof ApiPublicMetaIdRoute
@@ -50,6 +66,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/terminal': typeof TerminalRoute
+  '/unlock': typeof UnlockRoute
   '/api/public/img/$id': typeof ApiPublicImgIdRoute
   '/api/public/m/$mint': typeof ApiPublicMMintRoute
   '/api/public/meta/$id': typeof ApiPublicMetaIdRoute
@@ -57,13 +75,25 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/api/public/img/$id' | '/api/public/m/$mint' | '/api/public/meta/$id'
+    | '/'
+    | '/terminal'
+    | '/unlock'
+    | '/api/public/img/$id'
+    | '/api/public/m/$mint'
+    | '/api/public/meta/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/api/public/img/$id' | '/api/public/m/$mint' | '/api/public/meta/$id'
+    | '/'
+    | '/terminal'
+    | '/unlock'
+    | '/api/public/img/$id'
+    | '/api/public/m/$mint'
+    | '/api/public/meta/$id'
   id:
     | '__root__'
     | '/'
+    | '/terminal'
+    | '/unlock'
     | '/api/public/img/$id'
     | '/api/public/m/$mint'
     | '/api/public/meta/$id'
@@ -71,6 +101,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  TerminalRoute: typeof TerminalRoute
+  UnlockRoute: typeof UnlockRoute
   ApiPublicImgIdRoute: typeof ApiPublicImgIdRoute
   ApiPublicMMintRoute: typeof ApiPublicMMintRoute
   ApiPublicMetaIdRoute: typeof ApiPublicMetaIdRoute
@@ -83,6 +115,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terminal': {
+      id: '/terminal'
+      path: '/terminal'
+      fullPath: '/terminal'
+      preLoaderRoute: typeof TerminalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/unlock': {
+      id: '/unlock'
+      path: '/unlock'
+      fullPath: '/unlock'
+      preLoaderRoute: typeof UnlockRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/img/$id': {
@@ -111,6 +157,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  TerminalRoute: TerminalRoute,
+  UnlockRoute: UnlockRoute,
   ApiPublicImgIdRoute: ApiPublicImgIdRoute,
   ApiPublicMMintRoute: ApiPublicMMintRoute,
   ApiPublicMetaIdRoute: ApiPublicMetaIdRoute,

@@ -212,3 +212,8 @@
 .refresh-bar { transform-origin: left; animation: refill 15s linear forwards; }
 @keyframes alert-blink { 50% { opacity: .45; } }
 .alert-blink { animation: alert-blink 1.2s ease-in-out infinite; }
+
+@keyframes landing-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.landing-marquee { animation: landing-marquee 40s linear infinite; }
+@keyframes landing-glow { 0%,100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 55%, transparent); } 50% { box-shadow: 0 0 32px 4px color-mix(in oklab, var(--primary) 45%, transparent); } }
+.landing-cta { animation: landing-glow 2.4s ease-in-out infinite; }
