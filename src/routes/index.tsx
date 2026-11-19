@@ -1,12 +1,10 @@
 import { createFileRoute, ClientOnly } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
-import { requireUnlocked } from "@/lib/gate.functions";
 
 // Polyfills must finish before any Solana module evaluates (bundlers may hoist imports).
 const WalletShell = lazy(() => import("@/lib/polyfills").then(() => import("@/components/WalletShell")));
 
 export const Route = createFileRoute("/")({
-  beforeLoad: () => requireUnlocked(),
   head: () => ({
     meta: [
       { title: "H7 CRYPTO — Moedas em alta na Solana" },

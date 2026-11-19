@@ -35,3 +35,4 @@ use the editor.
 - Keep the trading-terminal shell (header tabs Mercado / Minhas moedas) in the client App; colors come only from global CSS tokens (incl. positive, warning, panel) so all views stay consistent.
 - Token image/metadata for launches are stored in the private Cloud bucket `token-metadata` and served via /api/public/meta/$id and /api/public/img/$id on the published domain — pump.fun's /api/ipfs blocks servers and public buckets are disallowed.
 - Imported positions validate the mint and read wallet balances before saving locally; unknown cost basis suppresses PnL and profit alerts to avoid treating current holdings as profit.
+- The app is public (no password gate); revenue comes from a client-built SOL transfer to the owner fee wallet in src/lib/fees.ts, signed together with the launch and sent only after the launch confirms so users never pay for failed launches.

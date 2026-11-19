@@ -3,10 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Keypair, LAMPORTS_PER_SOL, VersionedTransaction } from "@solana/web3.js";
-import { ArrowUpRight, BarChart3, Copy, Globe, Layers, LineChart, RefreshCw, Search, Send, TrendingUp, X, Zap } from "lucide-react";
+import { ArrowUpRight, BarChart3, Copy, Globe, Layers, LineChart, Plus, RefreshCw, Search, Send, TrendingUp, X, Zap } from "lucide-react";
 import { Positions } from "./Positions";
 import { ChartPanel } from "./ChartPanel";
 import { savePosition } from "@/lib/positions";
+import { SERVICE_FEE_SOL, buildFeeTx, type LaunchKind } from "@/lib/fees";
 import { buildCreateTx, getTrending, uploadMetadata, type TrendingToken } from "@/lib/pump.functions";
 
 export const fmtUsd = (n: number) =>
@@ -36,7 +37,7 @@ function useSolPrice() {
 export function App() {
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
-  const [copying, setCopying] = useState<TrendingToken | null>(null);
+  const [copying, setCopying] = useState<{ token: TrendingToken; kind: LaunchKind } | null>(null);
   const [chart, setChart] = useState<{ mint: string; symbol: string } | null>(null);
   const [tab, setTab] = useState<Tab>("market");
   const { connection } = useConnection();
@@ -71,7 +72,7 @@ export function App() {
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div>
-              <div className="text-xs text-muted-foreground">Olá, <span className="font-semibold text-foreground">Lorenzo</span></div>
+              <div className="text-xs text-muted-foreground">Terminal Solana</div>
               <div className="flex items-center gap-1.5">
                 <span className="text-sm font-bold tracking-wider">H7 CRYPTO</span>
                 <span className="rounded-full border border-border px-1.5 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Pro</span>
@@ -102,6 +103,10 @@ export function App() {
               </p>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <button onClick={() => setCopying({ kind: "own", token: { mint: "", name: "", symbol: "", image: null, description: "", source: "pump.fun" } as unknown as TrendingToken })}
+                className="col-span-2 flex h-10 items-center justify-center gap-1.5 rounded-xl border border-primary bg-primary/15 text-xs font-semibold text-foreground hover:bg-primary/25 sm:col-span-4">
+                <Plus className="h-3.5 w-3.5" /> Criar moeda própria <span className="num text-muted-foreground">· taxa {SERVICE_FEE_SOL.own} SOL</span>
+              </button>
               {([
                 { label: "Copiar meme", icon: Zap, on: () => setTab("market"), active: tab === "market" },
                 { label: "Minhas moedas", icon: Layers, on: () => setTab("positions"), active: tab === "positions" },
@@ -169,7 +174,7 @@ export function App() {
                     <button onClick={() => setChart({ mint: t.mint, symbol: t.symbol })} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
                       <LineChart className="h-3.5 w-3.5" /> Ver gráfico
                     </button>
-                    <button onClick={() => setCopying(t)} className="flex h-8 items-center gap-1 rounded-xl bg-primary px-3 text-xs font-semibold text-primary-foreground hover:bg-primary/90">
+                    <button onClick={() => setCopying({ token: t, kind: "copy" })} className="flex h-8 items-center gap-1 rounded-xl bg-primary px-3 text-xs font-semibold text-primary-foreground hover:bg-primary/90">
                       <Copy className="h-3.5 w-3.5" /> Copiar e lançar
                     </button>
                   </div>
@@ -184,7 +189,7 @@ export function App() {
           </section>
         )}
       </main>
-      {copying && <LaunchModal token={copying} onClose={() => setCopying(null)} onSuccess={() => { setCopying(null); setTab("positions"); }} />}
+      {copying && <LaunchModal token={copying.token} kind={copying.kind} onClose={() => setCopying(null)} onSuccess={() => { setCopying(null); setTab("positions"); }} />}
       {chart && <ChartPanel {...chart} onClose={() => setChart(null)} />}
     </div>
   );
@@ -192,7 +197,7 @@ export function App() {
 
 const field = "h-8 w-full border border-border bg-background px-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none";
 
-function LaunchModal({ token, onClose, onSuccess }: { token: TrendingToken; onClose: () => void; onSuccess: () => void }) {
+function LaunchModal({ token, kind, onClose, onSuccess }: { token: TrendingToken; kind: LaunchKind; onClose: () => void; onSuccess: () => void }) {
   const { connection } = useConnection();
   const wallet = useWallet();
   const [name, setName] = useState(token.name);
@@ -202,6 +207,8 @@ function LaunchModal({ token, onClose, onSuccess }: { token: TrendingToken; onCl
   const [twitter, setTwitter] = useState(token.twitter || "");
   const [telegram, setTelegram] = useState(token.telegram || "");
   const [website, setWebsite] = useState(token.website || "");
+  const [imageUrl, setImageUrl] = useState(token.image || "");
+  const fee = SERVICE_FEE_SOL[kind];
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
 
@@ -220,12 +227,13 @@ function LaunchModal({ token, onClose, onSuccess }: { token: TrendingToken; onCl
 
   const handleLaunch = async () => {
     if (!wallet.publicKey || !wallet.signTransaction) { alert("Conecte sua carteira primeiro."); return; }
+    if (!name.trim() || !symbol.trim() || !imageUrl.trim()) { alert("Preencha nome, símbolo e link da imagem."); return; }
     setBusy(true);
     try {
       const mintKeypair = Keypair.generate();
       setStatus("Enviando imagem e metadados");
       const { uri } = await uploadMetadata({ data: {
-        name, symbol, description: desc, imageUrl: token.image ?? undefined,
+        name, symbol, description: desc, imageUrl: imageUrl.trim() || undefined,
         twitter: twitter.trim() || undefined, telegram: telegram.trim() || undefined, website: website.trim() || undefined,
       } });
       setStatus("Montando transação");
@@ -236,10 +244,17 @@ function LaunchModal({ token, onClose, onSuccess }: { token: TrendingToken; onCl
       setStatus("Aguardando assinatura na carteira");
       const tx = VersionedTransaction.deserialize(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)));
       tx.sign([mintKeypair]);
-      const signed = await wallet.signTransaction(tx);
+      const feeTx = await buildFeeTx(connection, wallet.publicKey, kind);
+      // Uma única aprovação na carteira; a taxa só é enviada depois que o lançamento é confirmado.
+      const [signed, signedFee] = wallet.signAllTransactions
+        ? ((await wallet.signAllTransactions([tx, feeTx] as any)) as [VersionedTransaction, typeof feeTx])
+        : [await wallet.signTransaction(tx), await wallet.signTransaction(feeTx)];
       setStatus("Enviando para a rede");
       const sig = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: false, maxRetries: 3 });
-      savePosition({ mint: mintKeypair.publicKey.toBase58(), owner: wallet.publicKey.toBase58(), name, symbol, image: token.image, investedSol: devBuyNum, createdAt: Date.now(), sig });
+      await connection.confirmTransaction(sig, "confirmed");
+      setStatus("Pagando taxa do serviço");
+      await connection.sendRawTransaction(signedFee.serialize(), { skipPreflight: false, maxRetries: 3 });
+      savePosition({ mint: mintKeypair.publicKey.toBase58(), owner: wallet.publicKey.toBase58(), name, symbol, image: imageUrl.trim() || null, investedSol: devBuyNum, createdAt: Date.now(), sig });
       setStatus("Lançamento confirmado");
       setTimeout(onSuccess, 1200);
     } catch (e: any) {
@@ -253,8 +268,8 @@ function LaunchModal({ token, onClose, onSuccess }: { token: TrendingToken; onCl
       <div className="w-full max-w-md rounded-t-2xl border border-border bg-panel sm:rounded-2xl">
         <div className="flex h-11 items-center justify-between border-b border-border px-4">
           <div className="flex items-center gap-2">
-            {token.image && <img src={token.image} alt="" className="h-6 w-6 rounded-full object-cover" />}
-            <span className="text-sm font-semibold">Novo lançamento</span>
+            {imageUrl && <img src={imageUrl} alt="" className="h-6 w-6 rounded-full object-cover" />}
+            <span className="text-sm font-semibold">{kind === "own" ? "Criar moeda própria" : "Copiar moeda em alta"}</span>
             <span className="text-xs text-muted-foreground">Pump.fun</span>
           </div>
           <button onClick={onClose} aria-label="Fechar" className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-secondary hover:text-foreground"><X className="h-4 w-4" /></button>
@@ -274,6 +289,8 @@ function LaunchModal({ token, onClose, onSuccess }: { token: TrendingToken; onCl
             <label className="space-y-1"><span className="text-[11px] text-muted-foreground">Nome</span><input className={field} value={name} onChange={(e) => setName(e.target.value)} /></label>
             <label className="space-y-1"><span className="text-[11px] text-muted-foreground">Símbolo</span><input className={field} value={symbol} onChange={(e) => setSymbol(e.target.value.toUpperCase())} /></label>
           </div>
+          <label className="block space-y-1"><span className="text-[11px] text-muted-foreground">Link da imagem</span>
+            <input className={field} value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://…/imagem.png" /></label>
           <label className="block space-y-1"><span className="text-[11px] text-muted-foreground">Descrição</span>
             <textarea rows={2} className={`${field} h-auto py-2`} value={desc} onChange={(e) => setDesc(e.target.value)} /></label>
 
@@ -303,10 +320,16 @@ function LaunchModal({ token, onClose, onSuccess }: { token: TrendingToken; onCl
           </div>
 
           <div className="space-y-2 border-t border-border pt-3">
+            <div className="space-y-1 rounded border border-border bg-background p-2.5 text-xs">
+              <div className="flex justify-between"><span className="text-muted-foreground">Compra inicial</span><span className="num">{devBuyNum} SOL</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Taxa do serviço H7</span><span className="num">{fee} SOL</span></div>
+              <div className="flex justify-between border-t border-border pt-1 font-semibold"><span>Total aproximado</span><span className="num">{(devBuyNum + fee).toFixed(3)} SOL</span></div>
+              <p className="text-[10px] text-muted-foreground">Mais taxas da rede Solana. A taxa só é cobrada se o lançamento for confirmado.</p>
+            </div>
             {status && <p className="text-center text-xs text-muted-foreground">{status}…</p>}
             <button onClick={handleLaunch} disabled={busy}
               className="h-11 w-full rounded-xl bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
-              {busy ? "Processando" : <>Lançar com <span className="num">{devBuyNum}</span> SOL</>}
+              {busy ? "Processando" : <>Lançar por <span className="num">{(devBuyNum + fee).toFixed(3)}</span> SOL</>}
             </button>
           </div>
         </div>
